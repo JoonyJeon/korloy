@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.eaction.framework.business.logic.user.dao.UserDao">
+  	
+  	<!-- 회원정보 조회 -->
+  	<select id="selectUserInfo" parameterType="UserInfo" resultType="UserInfo">
+ 		SELECT TEU.USER_ID
+  		      ,TEU.USER_NAME
+  		      ,TEU.USER_MOBILE
+  		      ,TEU.USER_COMPANY
+  		      ,TEU.USER_COM_MAIL
+  		      ,TEU.USER_COM_ADDR
+  		      ,TEU.USER_POSITION
+  		      ,TEU.USER_GRP
+  		      ,TEU.USER_NATION
+  		      ,TEU.USER_LANG
+  		      ,TEU.UNIT_CD
+  		      ,TEU.CURR_CD
+  		      ,(SELECT CODE_VAL
+  		        FROM  TB_ECAT_CODE
+  		        WHERE CODE_KEY = TEU.CURR_CD) AS CURR_NM
+  		      ,TEU.ACCOUNT_CD
+  		      ,TEU.BIGO
+  		      ,TEU.USE_YN
+  		      ,(SELECT TEN.EMAIL_TO
+  		        FROM   TB_ECAT_NATION TEN
+  		        WHERE  TEN.NATION_CD = TEU.USER_NATION) AS UG_EMP
+  		      ,TEU.USER_COM_TEL
+  		FROM   TB_ECAT_USER TEU
+  		WHERE  TEU.USER_ID = #{user_id}
+  	</select>
+  	
+	<!-- 회원정보 등록 -->
+	<insert id="insertUser" parameterType="UserInfo">
+	    INSERT INTO TB_ECAT_USER (
+	        USER_ID
+	       ,USER_NAME
+	       ,USER_PWD
+	       ,USER_MOBILE
+	       ,USER_COMPANY
+	       ,USER_COM_MAIL
+	       ,USER_COM_ADDR
+	       ,USER_POSITION
+	       ,USER_GRP
+	       ,USER_NATION
+	       ,USER_LANG
+	       ,UNIT_CD
+	       ,CURR_CD
+	       ,EMP_ID
+	       ,ACCOUNT_CD
+	       ,EMAIL_CERT_KEY
+	       ,EMAIL_CERT_DATE
+	       ,EMAIL_CERT_YN
+	       ,BIGO
+	       ,USE_YN
+		   ,USER_COM_TEL
+	       ,FIR_ID
+	       ,FIR_DT
+	       ,LST_ID
+	       ,LST_DT
+	    ) VALUES (
+	        #{user_id}
+	       ,#{user_name, jdbcType=NVARCHAR}
+	       ,PwdEncrypt(#{user_pwd})
+	       ,#{user_mobile}
+	       ,#{user_company, jdbcType=NVARCHAR}
+	       ,#{user_com_mail}
+	       ,#{user_com_addr, jdbcType=NVARCHAR}
+	       ,#{user_position}
+	       ,#{user_grp}
+	       ,#{user_nation}
+	       ,#{user_lang}
+	       ,#{unit_cd}
+	       ,#{curr_cd}
+	       ,#{emp_id}
+	       ,#{account_cd}
+	       ,#{email_cert_key}
+	       ,''
+	       ,'N'
+	       ,#{bigo}
+	       ,'N'
+	       ,#{user_com_tel}
+	       ,'admin'
+	       ,getdate()
+	       ,'admin'
+	       ,getdate()
+	    )
+	</insert>
+	
+	<!-- 회원가입 시 이메일 중복 체크
+		'NEW' : DB에 없는 신규
+		'PRE' : DB에는 있으나 이메일 인증 완료하지 않아 회원이 아님
+		'DUPL': 활성화 되어있는 회원이 있음
+		※USE_YN에 값이 없는 데이타 null 이 조회될 경우가 있음.. (USE_YN 값이 없는 데이타는 올바른 데이타가 아님)
+	 -->
+	<select id="selectUserEmailDuplChk" parameterType="UserInfo" resultType="String">
+
+        SELECT CASE 
+                   WHEN ISNULL(MAX(USER_ID), '1') = '1'	<!-- 입력받은 아이디로 테이블 검색시 아무 행도 조회되지 않으면 null -->
+                   THEN 'NEW'
+                   ELSE  CASE <!-- 조회 된 행이 있음 → 회원이거나(USE_YN = Y), 이메일 인증하지 않은 예비회원(USE_YN = N) -->
+                             WHEN (SELECT TEU2.USE_YN 
+                                   FROM   TB_ECAT_USER TEU2
+                                   WHERE  TEU2.USER_ID = #{user_id}
+                                  ) = 'N'
+                             THEN 'PRE'
+                             ELSE 'DUPL'
+                         END 
+               END 
+        FROM   TB_ECAT_USER TEU
+        WHERE  TEU.USER_ID = #{user_id}
+	</select>
+	
+	<!-- PRE 회원 email_cert_key 조회 (메일발송용)-->
+	<select id="selectUserEmailCertInfo" parameterType="UserInfo" resultType="UserInfo">
+	    SELECT TEU.USER_ID
+	          ,TEU.EMAIL_CERT_KEY
+	          ,TEU.EMAIL_CERT_DATE
+	          ,TEU.EMAIL_CERT_YN
+	          ,TEU.USE_YN
+	    FROM   TB_ECAT_USER TEU
+	    WHERE  TEU.USER_ID = #{user_id}
+	</select>
+	
+	<!-- 로그인 회원 비밀번호 변경 입력비밀번호 일치 확인 -->
+	<select id="selectChkUserPwd" parameterType="UserInfo" resultType="int">
+        SELECT PwdCompare(#{old_user_pwd}, TEU.USER_PWD)
+        FROM   TB_ECAT_USER TEU 
+        WHERE  TEU.USER_ID = #{user_id}
+          AND  TEU.USE_YN != 'N'
+	</select>
+	
+	<!-- PRE 회원 이메일 인증 전에 가입 재시도 시 name, pw 수정-->
+	<!-- 비밀번호변경 (이메일 인증 단계에서 email_cert_key 재발급) -->
+	<update id="updateUserJoinInfo" parameterType="UserInfo">
+		UPDATE TB_ECAT_USER
+		SET    USER_ID = #{user_id}
+			   <if test='user_pwd !=null and user_pwd != ""'>
+			      ,USER_PWD = PwdEncrypt(#{user_pwd})
+			   </if>
+			   <if test='email_cert_key !=null and email_cert_key != ""'>
+				   ,EMAIL_CERT_KEY = #{email_cert_key}
+				   ,EMAIL_CERT_YN = 'N'
+				   ,EMAIL_CERT_DATE = getdate()
+			   </if>
+		WHERE  USER_ID = #{user_id}
+	</update>
+	
+	<!-- 이메일 인증 처리 -->
+	<update id="updateUserEmailAuthCd" parameterType="UserInfo">
+	    UPDATE TB_ECAT_USER
+        SET    EMAIL_CERT_DATE = getdate()
+              ,EMAIL_CERT_YN =
+        CASE 
+            WHEN (SELECT COUNT(1)
+                  FROM   TB_ECAT_USER TEU
+                  WHERE  TEU.USER_ID = #{user_id}
+                    AND  TEU.EMAIL_CERT_KEY = #{email_cert_key}
+                 ) = 1
+            THEN 'Y'
+            ELSE 'N'
+        END 
+              ,USE_YN =
+        CASE 
+            WHEN (SELECT COUNT(1)
+                  FROM   TB_ECAT_USER TEU
+                  WHERE  TEU.USER_ID = #{user_id}
+                    AND  TEU.EMAIL_CERT_KEY = #{email_cert_key}
+                 ) = 1 OR #{use_yn} != 'N'
+            THEN 'Y'
+            ELSE 'N'
+        END 
+        WHERE  USER_ID = #{user_id}
+	</update>
+	
+	<!-- 회원가입 인증 완료 -->
+	<update id="updateUserJoinConf" parameterType="UserInfo">
+        UPDATE TB_ECAT_USER
+        SET    USE_YN=
+        CASE 
+            WHEN (SELECT COUNT(1)
+                  FROM   TB_ECAT_USER TEU
+                  WHERE  TEU.USER_ID = #{user_id}
+                    AND  TEU.EMAIL_CERT_YN = 'Y'
+                 ) = 1 OR #{use_yn} != 'N'
+            THEN 'Y'
+            ELSE 'N'
+        END 
+        WHERE  USER_ID = #{user_id}
+	</update>
+	
+	<!-- email_cert_key update (reset password) -->
+<!-- 	<update id="updateUserEmailCertKey" parameterType="UserInfo"> -->
+<!--         UPDATE TB_ECAT_USER -->
+<!--         SET    EMAIL_CERT_KEY = #{email_cert_key} -->
+<!--               ,EMAIL_CERT_YN = 'N' -->
+<!--               ,EMAIL_CERT_DATE = getdate() -->
+<!--         WHERE  USER_ID = #{user_id} -->
+<!-- 	</update> -->
+	
+    
+    <!-- 마이페이지 정보 수정 -->
+    <!-- 비밀번호 변경 -->
+    <!-- 승급요청 -->
+    <update id="updateUserInfo" parameterType="UserInfo">
+        UPDATE TB_ECAT_USER
+        SET    USER_ID = #{user_id} 
+        	   <if test='user_pwd !=null and user_pwd != ""'>
+        	  ,USER_PWD = PwdEncrypt(#{user_pwd})
+        	   </if>
+              ,USER_NAME     = #{user_name, jdbcType=NVARCHAR}
+              ,USER_MOBILE   = #{user_mobile}
+              ,USER_COMPANY  = #{user_company, jdbcType=NVARCHAR}
+              ,USER_COM_MAIL = #{user_com_mail}
+              ,USER_COM_ADDR = #{user_com_addr, jdbcType=NVARCHAR}
+        	   <if test='user_position !=null and user_position != ""'>
+              ,USER_POSITION = #{user_position}
+        	   </if>
+        	   <if test='user_grp !=null and user_grp != ""'>
+              ,USER_GRP      = #{user_grp}
+        	   </if>
+              ,USER_NATION   = #{user_nation}
+              ,USER_LANG     = #{user_lang}
+              ,UNIT_CD       = #{unit_cd}
+              ,CURR_CD       = #{curr_cd}
+        	   <if test='emp_id !=null and emp_id != ""'>
+              ,EMP_ID      = #{emp_id}
+        	   </if>
+        	   <if test='account_cd !=null and account_cd != ""'>
+              ,ACCOUNT_CD    = #{account_cd}
+        	   </if>
+        	   <if test='bigo !=null and bigo != ""'>
+              ,BIGO          = #{bigo}
+        	   </if>
+        	  ,USER_COM_TEL  = #{user_com_tel} 
+              ,LST_ID        = #{user_id}
+              ,LST_DT        = getdate()
+        WHERE  USER_ID       = #{login_user_id}
+    </update>
+    
+    <!-- 승급요청 -->
+    <update id="updateUserGrp" parameterType="UserInfo">
+        UPDATE TB_ECAT_USER
+        SET    USER_GRP      = #{user_grp}
+              ,LST_ID        = #{login_user_id}
+              ,LST_DT        = getdate()
+        WHERE  USER_ID       = #{login_user_id}
+    </update>
+    
+    
+<!-- 회원탈퇴 처리 STEP1 ~ STEP5-->
+    <!-- STEP1 : 회원탈퇴처리 (어셈블리 상세 fk.assem_no 데이타 삭제) -->
+    <delete id="deleteUserInfoStepDeleteAssem_d" parameterType="UserInfo">
+        DELETE 
+        FROM   TB_ECAT_ASSEM_D
+        WHERE  ASSEM_NO IN (SELECT ASSEM_NO 
+                            FROM   TB_ECAT_ASSEM_M 
+                            WHERE  USER_ID = #{login_user_id})
+    </delete>
+    <!-- STEP2 : 회원탈퇴처리 (어셈블리 마스터 fk.user_id 데이타 삭제) -->
+    <delete id="deleteUserInfoStepDeleteAssem_m" parameterType="UserInfo">
+        DELETE 
+        FROM   TB_ECAT_ASSEM_M
+        WHERE  USER_ID = #{login_user_id}
+    </delete>
+    <!-- STEP3 : 회원탈퇴처리 (장바구니 견적서 fk.user_no 데이타 삭제) -->
+    <delete id="deleteUserInfoStepDeleteBasket_o" parameterType="UserInfo">
+        DELETE 
+        FROM   TB_ECAT_BASKET_O
+        WHERE  USER_ID = #{login_user_id}
+    </delete>
+    <!-- STEP4 : 회원탈퇴처리 (장바구니 상세 fk.cart_no 데이타 삭제) -->
+    <delete id="deleteUserInfoStepDeleteBasket_d" parameterType="UserInfo">
+        DELETE 
+        FROM   TB_ECAT_BASKET_D
+        WHERE  CART_NO  IN (SELECT CART_NO 
+                            FROM   TB_ECAT_BASKET_M 
+                            WHERE  USER_ID = #{login_user_id})
+    </delete>
+    <!-- STEP5 : 회원탈퇴처리 (장바구니 마스터 fk.user_id 데이타 삭제) -->
+    <delete id="deleteUserInfoStepDeleteBasket_m" parameterType="UserInfo">
+        DELETE 
+        FROM   TB_ECAT_BASKET_M
+        WHERE  USER_ID = #{login_user_id}
+    </delete>
+    <!-- STEP6 : 회원탈퇴처리 (user테이블 데이타 삭제) -->
+    <delete id="deleteUserInfo" parameterType="UserInfo">
+        DELETE 
+        FROM   TB_ECAT_USER
+        WHERE  USER_ID = #{login_user_id}
+    </delete>
+<!-- 회원탈퇴 처리 STEP1 ~ STEP6 END -->
+
+<!-- ////////////// CodeInfo ////////////////// -->	
+	<!-- 국가 정보 코드인포 리스트 -->
+	<select id="selectUserNationCodeList" resultType="CodeInfo">
+        SELECT NATION_CD AS CODE,
+               NATION_EN_NM AS CODENM,
+               NATION_KR_NM AS CODENM_K,
+               NATION_EN_NM AS CODENM_E,
+               NATION_EN_NM AS CODENM_J,
+               EMAIL_TO 	AS EMAIL_TO
+        FROM   TB_ECAT_NATION
+	</select>
+	
+	<!-- 단위 정보 코드인포 리스트 -->	
+	<select id="selectUserUnitCodeList" resultType="CodeInfo">
+        SELECT CODE_KEY AS CODE,
+               CODE_VAL AS CODENM,
+               CODE_VAL AS CODENM_K,
+               CODE_VAL AS CODENM_E,
+               CODE_VAL AS CODENM_J
+        FROM   TB_ECAT_CODE 
+        WHERE  PARENT_KEY = 'CM0001'
+          AND  USE_YN = 'Y'
+	</select>
+	
+	<!-- 통화 정보 코드인포 리스트 -->	
+	<select id="selectUserCurrencyCodeList" resultType="CodeInfo">
+        SELECT CODE_KEY AS CODE,
+               CODE_VAL AS CODENM,
+               CODE_VAL AS CODENM_K,
+               CODE_VAL AS CODENM_E,
+               CODE_VAL AS CODENM_J
+        FROM   TB_ECAT_CODE 
+        WHERE  PARENT_KEY = 'CM0015'
+          AND  USE_YN = 'Y'
+	</select>
+	
+	<!-- 언어 정보 코드인포 리스트 -->
+	<select id="selectUserLangCodeList" resultType="CodeInfo">
+		SELECT LANG_CD 	AS CODE,
+		       LANG_EN_NM AS CODENM,
+		       LANG_KR_NM AS CODENM_K,
+		       LANG_EN_NM AS CODENM_E,
+		       LANG_EN_NM AS CODENM_J
+		FROM   TB_ECAT_LANG
+	</select>
+	
+	<!-- 국가코드와 담당자이메일 -->
+	<select id="selectEmpbyNationCdList" resultType="CodeInfo">
+		SELECT NATION_CD AS CODE,
+		       EMAIL_TO AS CODENM,
+		       EMAIL_TO AS CODENM_K,
+		       EMAIL_TO AS CODENM_E,
+		       EMAIL_TO AS CODENM_J
+		FROM   TB_ECAT_NATION
+	</select>
+	<!-- 비밀번호 수정 - 비밀번호 재설정과 변경 시 사용 -->
+	<update id="updateUserPassword" parameterType="UserInfo">
+		UPDATE TB_ECAT_USER
+       	SET    USER_PWD = PwdEncrypt(#{user_pwd})
+              ,LST_ID        = #{user_id}
+              ,LST_DT        = getdate()
+        WHERE  USER_ID       = #{user_id}
+	</update>
+		
+	<!-- 메일 수신자 참조자 -->
+	<select id="selectUserMailReceiver" parameterType="String" resultType="UserInfo">
+        SELECT EMAIL_TO
+              ,EMAIL_CC1
+              ,EMAIL_CC2
+        FROM   TB_ECAT_NATION
+        WHERE  NATION_CD = #{nation_cd}
+	</select>
+</mapper>
+  	

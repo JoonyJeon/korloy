@@ -1,0 +1,1052 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- DAO 구현체 자동생성을 위한 DAO 인터페이스 정의 -->
+<mapper namespace="com.eaction.framework.business.logic.assembly.dao.AssemblyDao">
+
+	<!-- Assembly 리스트 갯수 조회 -->
+	<select id="selectAssemblyListCnt" parameterType="AssemblyInfo" resultType="int">
+		SELECT COUNT(1)
+		FROM TB_ECAT_ASSEM_M M
+		WHERE 1=1
+			<if test='login_user_id != null and login_user_id != ""'>
+			AND M.USER_ID  = #{login_user_id}
+			</if>
+			AND M.USE_YN  = 'Y'
+			<if test='assem_no != null and assem_no != ""'>
+			AND M.ASSEM_NO = #{assem_no}
+			</if>
+	</select>
+	
+	<!-- Assembly 리스트 조회 -->
+	<select id="selectAssemblyList" parameterType="AssemblyInfo" resultType="AssemblyInfo">
+		SELECT 	ASBY.RN
+			   ,ASBY.ASSEM_NO
+			   ,ASBY.ASSEM_NM 
+			   ,ASBY.ASSEM_DESC
+			   ,ASBY.USER_ID
+			   ,ASBY.STP_B_FILE
+			   ,ASBY.STP_D_FILE
+			   ,ASBY.DXF_FILE
+			   ,ASBY.GTC_FILE
+			   ,ASBY.P21_FILE			   
+			   ,ASBY.FIR_ID								AS CRT_ID
+			   ,CONVERT(VARCHAR,ASBY.FIR_DT, 120)		AS CRT_DT
+			   ,ASBY.LST_ID							AS UPD_ID
+			   ,CONVERT(VARCHAR,ASBY.LST_DT, 120)		AS UPD_DT
+			   ,(
+				   	SELECT COUNT(1)
+				    FROM   TB_ECAT_ASSEM_D D
+			    	WHERE  D.ASSEM_NO = ASBY.ASSEM_NO
+			    		AND	EXISTS(	SELECT 	ASSEM_NO
+			      			    FROM 		TB_ECAT_ASSEM_M M
+			      			    WHERE		M.ASSEM_NO = D.ASSEM_NO
+					  			  <if test='login_user_id != null and login_user_id != ""'>
+			      				  AND		M.USER_ID = #{login_user_id}
+			      				  </if>
+			      			  )
+			      		AND	D.USE_YN = 'Y'
+			   ) AS ITEM_CNT
+			   ,ASBY.BULD_STA
+			   ,ASBY.BULD_MSG
+			   ,CONVERT(VARCHAR,ASBY.BULD_ST, 120) AS BULD_ST
+			   ,CONVERT(VARCHAR,ASBY.BULD_ET, 120) AS BULD_ET
+		FROM( SELECT  M.*
+		              ,ROW_NUMBER() OVER (ORDER BY M.LST_DT ASC) AS RN
+			    FROM   TB_ECAT_ASSEM_M M
+			    WHERE  1=1
+			    	<if test='login_user_id != null and login_user_id != ""'>
+			    	AND M.USER_ID = #{login_user_id}
+			    	</if>
+			      	AND  M.USE_YN ='Y'
+			      	<if test='assem_no != null and assem_no != ""'>
+			      	AND  M.ASSEM_NO = #{assem_no}
+			      	</if>
+			) ASBY
+		
+		ORDER BY FIR_DT DESC
+		<if test='isPageYn != "" and isPageYn =="Y"'>
+			OFFSET #{startIndex} ROWS
+			FETCH NEXT #{pageCount} ROWS ONLY
+		</if>
+	</select>
+	
+	<!-- Assembly 아이템 리스트 갯수 조회 -->
+	<select id="selectAssemblyItemListCnt" parameterType="AssemblyInfo" resultType="int">	
+		    SELECT COUNT(1)
+		    FROM   TB_ECAT_ASSEM_D D
+	    	WHERE  D.ASSEM_NO = CAST(#{assem_no} AS INTEGER)
+	    		AND	EXISTS(	SELECT 	ASSEM_NO
+	      			    FROM 		TB_ECAT_ASSEM_M M
+	      			    WHERE		M.ASSEM_NO = D.ASSEM_NO
+			  			  <if test='login_user_id != null and login_user_id != ""'>
+	      				  AND		M.USER_ID = #{login_user_id}
+	      				  </if>
+	      			  )
+	      		AND	D.USE_YN = 'Y'
+	</select>
+	
+	<!-- Assembly 아이템 리스트 조회 -->
+	<select id="selectAssemblyItemList" parameterType="AssemblyInfo" resultType="AssemblyInfo">
+		SELECT D.ASSEM_NO
+			      ,D.MATNR
+			      ,(SELECT IT.IG_CD FROM TB_ECAT_CONT_IT IT
+			      	WHERE IT.MATNR = D.MATNR) AS IG_CD
+			      ,D.DESIGNATION
+			      ,D.GRADE
+			      ,D.FIR_ID							AS CRT_ID
+			      ,D.FIR_DT							AS CRT_DT
+			      ,D.LST_ID							AS UPD_ID
+			      ,D.LST_DT							AS UPD_DT
+			      ,(SELECT CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_THN_NM) 
+			        FROM TB_ECAT_CONT_F IMG 
+    				WHERE 1=1
+    							AND IMG.FILE_CD = D.MATNR 
+    							AND IMG.USE_YN = 'Y' 
+    							AND IMG.FILE_TYP = 'CC0017') AS IT_IMG    							
+    			  ,(SELECT COUNT(1) FROM TB_ECAT_ASSEM_LOC LOC WHERE LOC.ASSEM_NO = #{assem_no} AND LOC.MATNR = D.MATNR ) AS QUANTITY
+    			  ,(SELECT M.BULD_STA FROM TB_ECAT_ASSEM_M M WHERE M.ASSEM_NO = #{assem_no}) AS BULD_STA <!-- Build Status -->
+		FROM   TB_ECAT_ASSEM_D D
+		WHERE  1=1
+				AND D.ASSEM_NO = #{assem_no}
+				AND  EXISTS( SELECT 	ASSEM_NO
+									FROM 		TB_ECAT_ASSEM_M M
+			  			  			WHERE		M.ASSEM_NO = D.ASSEM_NO
+			  			  			<if test='login_user_id != null and login_user_id != ""'>
+			  						AND		M.USER_ID = #{login_user_id}
+			  						</if>
+			  	)
+			  AND	D.USE_YN = 'Y'
+		ORDER BY D.LST_DT	  
+	</select>
+	
+	<!-- Assembly 그룹 삭제 -->
+	<delete id="deleteAssembly" parameterType="AssemblyInfo">
+	    DELETE FROM TB_ECAT_ASSEM_M
+	    WHERE  ASSEM_NO = CAST (#{assem_no} AS INTEGER)
+	</delete>
+	
+	<!-- Assembly 아이템 삭제 -->
+	<delete id="deleteAssemblyItem" parameterType="AssemblyInfo">
+        DELETE
+        FROM   TB_ECAT_ASSEM_D
+        WHERE  ASSEM_NO 	= CAST (#{assem_no} AS INTEGER)
+        <if test='matnr !=null and matnr !=""'>
+          AND  MATNR 	= #{matnr}
+        </if>
+          AND  EXISTS( SELECT 	ASSEM_NO
+	     			   				FROM 	TB_ECAT_ASSEM_M M
+	     			   				WHERE	M.ASSEM_NO = TB_ECAT_ASSEM_D.ASSEM_NO
+			  			  			<if test='login_user_id != null and login_user_id != ""'>
+	     							AND		M.USER_ID = #{login_user_id}
+	     							</if>
+	     						)
+	</delete>
+	
+	<!-- Assembly 등록 -->
+	<insert id="insertAssembly" parameterType="AssemblyInfo">
+        INSERT INTO TB_ECAT_ASSEM_M (
+            USER_ID 
+           ,ASSEM_NM
+           ,ASSEM_DESC 
+           ,USE_YN
+           ,FIR_ID		
+           ,FIR_DT		
+           ,LST_ID		
+           ,LST_DT		
+        ) VALUES (
+            #{login_user_id}
+           ,#{assem_nm}
+           ,#{assem_desc}
+           ,'Y'
+           ,#{login_user_id}
+           ,getdate()
+           ,#{login_user_id}
+           ,getdate()
+        )
+	</insert>
+	
+	<!-- Assembly 수정 -->
+	<update id="updateAssembly" parameterType="AssemblyInfo">
+	    UPDATE TB_ECAT_ASSEM_M
+	    SET		LST_DT      	= getdate()
+	    		,LST_ID      	= #{login_user_id}
+		    <if test='assem_nm !=null and assem_nm !=""'>
+		    	,ASSEM_NM    	= #{assem_nm}
+		    </if>
+		    <if test='assem_desc !=null and assem_desc !=""'>
+		    	,ASSEM_DESC   	= #{assem_desc}
+		    </if>
+		    <if test='stp_b_file !=null and stp_b_file !=""'>
+		    	,STP_B_FILE   	= #{stp_b_file}
+		    </if>
+		    <if test='stp_d_file !=null and stp_d_file !=""'>
+		    	,STP_D_FILE   	= #{stp_d_file}
+		    </if>
+		    <if test='dxf_file !=null and dxf_file !=""'>
+		    	,DXF_FILE   	= #{dxf_file}
+		    </if>
+		    <if test='gtc_file !=null and gtc_file !=""'>
+		    	,GTC_FILE   	= #{gtc_file}
+		    </if>
+		    <if test='p21_file !=null and p21_file !=""'>
+		    	,P21_FILE   	= #{p21_file}
+		    </if>
+	          	
+	    WHERE  ASSEM_NO     	= CAST (#{assem_no} AS INTEGER)
+	</update>
+	
+	<!-- Assembly 목록  조회 -->		
+	<select id="selectAssemCartList" resultType="AssemblyInfo" parameterType="AssemblyInfo">
+		SELECT	CART.CART_NO
+					,CART.CART_NM
+		FROM TB_ECAT_BASKET_M CART 
+			WHERE 1=1
+        	<if test='login_user_id != null and login_user_id != ""'>
+        	AND CART.USER_ID = #{login_user_id}
+        	</if>
+			AND CART.USE_YN = 'Y' 
+			ORDER BY CART.LST_DT
+	</select>
+	
+	<!-- GTC파일 목록 -->
+	<select id="selectAssemblyItemFile" parameterType="AssemblyInfo" resultType="AssemblyInfo">
+		SELECT TECF.FILE_DWL_PATH 
+				,TECF.FILE_ORG_NM
+				,TECF.FILE_THN_NM 
+		FROM TB_ECAT_CONT_F TECF 
+		<!-- 아래 파일 타입 코드는 gtc_single 파일 -->
+		WHERE TECF.FILE_TYP ='CC0023'
+		<!-- STP_D -->
+<!-- 		WHERE TECF.FILE_TYP ='CC0021' -->
+		<!-- 아래 file_type은 dxf -->
+<!-- 		WHERE TECF.FILE_TYP ='CC0022' -->
+		  AND TECF.FILE_CD = #{matnr}
+		  AND TECF.USE_YN = 'Y'
+	</select>
+	
+	<!-- Assembly Build파일 초기화 -->
+	<update id="updateAssemblyFileInit" parameterType="AssemblyInfo">
+		UPDATE	TB_ECAT_ASSEM_M
+		SET
+				STP_B_FILE			= NULL
+				,STP_D_FILE			= NULL
+				,DXF_FILE				= NULL
+				,GTC_FILE				= NULL
+				,P21_FILE				= NULL
+				,LST_DT				= getdate()
+				,LST_ID					= #{login_user_id}
+		WHERE	ASSEM_NO			= CAST (#{assem_no} AS INTEGER)
+	</update>
+	
+	
+	
+	
+	
+	<!-- ##################################################################################### -->
+	
+	
+	
+	<select id="getPlmHierarchyList" parameterType="String" resultType="AssemblyInfo">
+    	 <!-- PLM Hierarchy  -->
+		WITH CTG_TREE AS (
+			SELECT
+				1 AS LVL,
+				CONVERT(VARCHAR(MAX),CLASS_ID) AS PLM_DEPTH,
+				UID,
+				PARENT_UID,
+				CLASS_ID,
+				CNAME
+			FROM
+				IF_PLM_CLASS WITH(NOLOCK)
+			WHERE
+				CLASS_ID = 'CTL'
+			UNION ALL
+			SELECT
+				CT.LVL + 1 AS LVL,
+				CASE 
+					WHEN C2.CLASS_ID IS NOT NULL AND  C2.CLASS_ID <![CDATA[<>]]> '' THEN CONVERT(VARCHAR(MAX),CONCAT(CT.PLM_DEPTH,'>',C2.CLASS_ID)) 
+				    ELSE ''	
+				END PLM_DEPTH,
+				C2.UID,
+				C2.PARENT_UID,
+				C2.CLASS_ID,
+				C2.CNAME
+			FROM IF_PLM_CLASS C2 WITH(NOLOCK), CTG_TREE CT
+			WHERE CT.UID = C2.PARENT_UID
+		)
+		SELECT
+			GTC_SORT,
+			GTC_DEPTH,
+			GTC_VD_NODE_NM,
+			dbo.FN_REMOVE_SPECIAL_CHARS(GTC_VD_RT) GTC_VD_RT,
+			GTC_VD_ID,
+			GTC_VD_PID,
+			MATNR,
+			DESIGNATION
+		FROM (
+			SELECT
+				CTR.LVL AS GTC_SORT,
+				CTR.PLM_DEPTH AS GTC_DEPTH,
+				REPLICATE(' ', 4*(CTR.LVL-1)) + CTR.CNAME AS GTC_VD_NODE_NM,
+				(	
+					SELECT 
+						value
+					FROM (
+						SELECT 
+							ROW_NUMBER() OVER(ORDER BY (SELECT 1)) AS RNUM,
+							* 
+						FROM STRING_SPLIT((
+							CASE WHEN CTR.UID = PLMD.CLASS_UID THEN CTR.CLASS_ID ELSE '' END
+						), '_')
+					) T1
+					WHERE RNUM = 1	
+				) AS GTC_VD_RT, 
+				CASE WHEN CTR.UID = PLMD.CLASS_UID THEN CTR.CLASS_ID ELSE '' END GTC_VD_ID,
+				(SELECT CLASS_ID FROM IF_PLM_CLASS B WHERE CTR.PARENT_UID = B.UID) AS GTC_VD_PID,
+				ECIT.MATNR,
+				PLMD.CNO AS DESIGNATION
+			FROM CTG_TREE CTR WITH(NOLOCK)
+			LEFT OUTER JOIN IF_PLM_DSGN PLMD WITH(NOLOCK)
+		 	  ON CTR.UID = PLMD.CLASS_UID
+			LEFT OUTER JOIN TB_ECAT_CONT_IT ECIT WITH(NOLOCK)
+			  ON PLMD.CNO = ECIT.DESIGNATION
+		) MG
+		WHERE 1=1
+
+		<!-- 자재번호 -->
+		AND MG.MATNR = #{matnr}
+		    
+		ORDER BY MG.GTC_DEPTH
+	</select>
+
+	<select id="getGtcHierarchyList" parameterType="String" resultType="AssemblyInfo">
+		<!-- GTC Hierarchy -->	
+		WITH GTC_TREE AS (
+			SELECT
+				GTC_VD_ID,
+				GTC_VD_PID,
+				GTC_VD_NODE_NM,
+				GTC_VD_PREF_NM,
+				IDX,
+				CONVERT(VARCHAR(MAX), '001') GTC_SORT,
+				CONVERT(VARCHAR(MAX),GTC_VD_ID) AS DEPTH
+			FROM TB_ECAT_GTC_HIER WITH(NOLOCK)
+		    WHERE GTC_VD_ID = 'CTL'
+			UNION ALL
+			SELECT
+				GTC.GTC_VD_ID,
+				GTC.GTC_VD_PID,
+				GTC.GTC_VD_NODE_NM,
+				GTC.GTC_VD_PREF_NM,
+				GTC.IDX,
+				CONVERT(VARCHAR(MAX), CONCAT(CT.GTC_SORT, REPLICATE('0',3-LEN(GTC.IDX)), GTC.IDX)) AS GTC_SORT,
+				CASE 
+					WHEN GTC.GTC_VD_ID IS NOT NULL AND  GTC.GTC_VD_ID <![CDATA[<>]]> '' THEN CONVERT(VARCHAR(MAX),CONCAT(CT.DEPTH,'>',GTC.GTC_VD_ID)) 
+				    ELSE ''	
+				END DEPTH
+			FROM TB_ECAT_GTC_HIER GTC WITH(NOLOCK), GTC_TREE CT
+			WHERE CT.GTC_VD_ID = GTC.GTC_VD_PID
+		)
+		SELECT
+			GTC_SORT,
+			GTC_DEPTH,
+			GTC_VD_ID,
+			GTC_VD_PID,
+			dbo.FN_REMOVE_SPECIAL_CHARS(GTC_VD_RT) GTC_VD_RT,
+			MATNR,
+			DESIGNATION
+		FROM (
+			SELECT
+				GTR.GTC_SORT,
+				GTR.DEPTH AS GTC_DEPTH,
+				GTR.GTC_VD_ID,
+				GTR.GTC_VD_PID,
+		
+				CASE WHEN (LEN(GTR.GTC_SORT)/3) = 1 THEN GTR.GTC_VD_NODE_NM
+					 ELSE REPLICATE(' ', 3 * (LEN(GTR.GTC_SORT)/3)) + GTR.GTC_VD_NODE_NM
+				END GTC_VD_NODE_NM,
+		
+				(	
+					SELECT 
+						value
+					FROM (
+						SELECT 
+							ROW_NUMBER() OVER(ORDER BY (SELECT 1)) AS RNUM,
+							* 
+						FROM STRING_SPLIT(GTR.GTC_VD_PID, '_')
+					) T1
+					WHERE RNUM = 1	
+				) AS GTC_VD_RT, 
+				GTR.IDX,
+				ECIT.MATNR,
+				ECIT.DESIGNATION
+			FROM GTC_TREE GTR WITH(NOLOCK)
+			LEFT OUTER JOIN TB_ECAT_CONT_IT ECIT WITH(NOLOCK)
+			  ON GTR.GTC_VD_ID = ECIT.VENDER_ID
+		) MG
+		WHERE 1=1
+		
+		<!-- 자재번호 -->
+		AND MG.MATNR = #{matnr}
+	    		
+		ORDER BY MG.GTC_SORT ASC	
+	</select>
+	
+	<select id="getAssemblyInfo" parameterType="AssemblyInfo" resultType="AssemblyInfo">
+		SELECT * FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK)
+		WHERE SYMBOL IN ('CCMS','CCWS','IIC','DCON-MS','DCON-WS','DCONMS','DCONWS')
+		
+		<!-- 자재번호 -->
+	    <if test='matnr != null and matnr != ""'>
+	      AND MATNR = #{matnr}
+	    </if>	    
+  	</select>
+  	
+	<select id="getAssyAdaptive" parameterType="hashMap" resultType="AssemblyItemInfo">
+		<!-- Conclusion Adaptive -->
+		SELECT
+			MG.MATNR,
+			MAX(CASE WHEN ECF.FILE_TYP = 'CC0020' THEN ECF.FILE_PHY_PATH ELSE '' END) STP_BASIC,
+			MAX(CASE WHEN ECF.FILE_TYP = 'CC0021' THEN ECF.FILE_PHY_PATH ELSE '' END) STP_DETAIL
+		FROM (
+			<if test='CTYP eq "MS".toString()'>
+			SELECT * FROM TB_ECAT_CONT_IT WITH(NOLOCK)
+			WHERE USE_YN = 'Y'
+			AND ESC_GB = 'Y'
+			  AND MATNR IN (
+				SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK)
+				WHERE VAL LIKE CONCAT('%', #{CCMS}, '%')
+				  AND SYMBOL = 'CCWS'
+				  AND MATNR IN (
+					SELECT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) 
+					WHERE SYMBOL IN ('DCON-WS','DCONWS')
+				  	  AND (VAL IS NOT NULL AND VAL <![CDATA[<>]]> '')
+					  AND FORMAT(CONVERT(FLOAT, VAL), '###0.####') = FORMAT(CONVERT(FLOAT, #{DCON-MS}), '###0.####'))
+			  )
+			</if>
+			<if test='CTYP eq "WS".toString()'>
+			SELECT * FROM TB_ECAT_CONT_IT WITH(NOLOCK)
+			WHERE USE_YN = 'Y'
+			AND ESC_GB = 'Y'
+			  AND MATNR IN (
+				SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK)
+				WHERE VAL LIKE CONCAT('%', #{CCWS}, '%')
+				  AND SYMBOL = 'CCMS'
+				  AND MATNR IN (
+				  	SELECT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) 
+				  	WHERE SYMBOL IN ('DCON-MS','DCONMS')
+				  	  AND (VAL IS NOT NULL AND VAL <![CDATA[<>]]> '')
+				  	  AND FORMAT(CONVERT(FLOAT, VAL), '###0.####') = FORMAT(CONVERT(FLOAT, #{DCON-WS}), '###0.####'))
+			  )				  	  
+			</if>
+		) MG 
+		LEFT OUTER JOIN TB_ECAT_CONT_F ECF WITH(NOLOCK)
+		  ON MG.MATNR = ECF.FILE_CD
+		WHERE ECF.FILE_TYP IN ('CC0020','CC0021')
+		GROUP BY MG.MATNR
+		ORDER BY MG.MATNR ASC
+	</select>
+	
+	<!-- Assembly Adaptive 아이템의 아이템그룹 취득 -->
+	<select id="getAssyAdaptiveIgGroup" parameterType="hashMap" resultType="AssemblyItemInfo">
+		SELECT IG.IG_CD
+		FROM TB_ECAT_CONT_IG IG
+		WHERE 1 = 1
+		  AND IG.IG_CD IN 
+		  (
+		             SELECT IT.IG_CD
+		             FROM TB_ECAT_CONT_IT IT
+		             WHERE 1 = 1
+		               AND IT.MATNR IN (
+										SELECT
+											MG.MATNR
+										FROM (	  	
+											<if test='CTYP eq "MS".toString()'>
+											SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK)
+											WHERE VAL LIKE CONCAT('%', #{CCMS}, '%')
+											  AND SYMBOL = 'CCWS'
+											  AND MATNR IN (SELECT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) WHERE SYMBOL IN ('DCON-WS','DCONWS'))  
+											</if>
+											<if test='CTYP eq "WS".toString()'>
+											SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK)
+											WHERE VAL LIKE CONCAT('%', #{CCWS}, '%')
+											  AND SYMBOL = 'CCMS'
+											  AND MATNR IN (SELECT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) WHERE SYMBOL IN ('DCON-MS','DCONMS'))			
+											</if>
+											<if test='CTYP eq "".toString()'>
+											SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK)
+											WHERE VAL LIKE CONCAT('%', #{CCMS}, '%')
+											  AND SYMBOL = 'CCWS'
+											  AND MATNR IN (SELECT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) WHERE SYMBOL IN ('DCON-WS','DCONWS'))
+											</if>
+										) MG 
+										LEFT OUTER JOIN TB_ECAT_CONT_F ECF WITH(NOLOCK)
+										  ON MG.MATNR = ECF.FILE_CD
+										WHERE ECF.FILE_TYP IN ('CC0020','CC0021')
+										GROUP BY MG.MATNR)
+		               AND IT.USE_YN = 'Y'
+		               AND IT.ESC_GB = 'Y'
+		             GROUP BY IT.IG_CD
+		  )
+		  AND IG.USE_YN = 'Y'
+	</select>
+  	  	  	
+  	<select id="getAssyTool" parameterType="hashMap" resultType="AssemblyItemInfo">
+  		<!-- Conclusion Tool -->	
+  		SELECT
+			MG.MATNR,
+			MAX(CASE WHEN ECF.FILE_TYP = 'CC0020' THEN ECF.FILE_PHY_PATH ELSE '' END) STP_BASIC,
+			MAX(CASE WHEN ECF.FILE_TYP = 'CC0021' THEN ECF.FILE_PHY_PATH ELSE '' END) STP_DETAIL
+		FROM (
+			SELECT * FROM TB_ECAT_CONT_IT WITH(NOLOCK)
+			WHERE USE_YN = 'Y'
+			AND ESC_GB = 'Y'
+			  AND MATNR IN (
+				SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) 
+				WHERE SYMBOL = #{key1} 					-- CCMS/CCWS
+				  AND VAL LIKE CONCAT('%', #{val}, '%') -- CCWS/CCMS
+				  AND MATNR IN (SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) WHERE SYMBOL = #{key2})
+			  )
+		) MG 
+		LEFT OUTER JOIN TB_ECAT_CONT_F ECF WITH(NOLOCK)
+		  ON MG.MATNR = ECF.FILE_CD
+		WHERE ECF.FILE_TYP IN ('CC0020','CC0021')
+		GROUP BY MG.MATNR
+		ORDER BY MG.MATNR ASC
+  	</select>
+  	
+  	<!-- Assembly Tool의 아이템그룹 취득 -->
+	<select id="getAssyToolIgGroup" parameterType="hashMap" resultType="AssemblyItemInfo">
+		SELECT IG.IG_CD
+		FROM TB_ECAT_CONT_IG IG
+		WHERE 1 = 1
+		  AND IG.IG_CD IN 
+		  (
+		             SELECT IT.IG_CD
+		             FROM TB_ECAT_CONT_IT IT
+		             WHERE 1 = 1
+		               AND IT.MATNR IN (
+		               						SELECT
+												MG.MATNR
+											FROM (
+												SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) 
+												WHERE SYMBOL = #{key1} -- CCMS
+												  AND VAL LIKE CONCAT('%', #{val}, '%') -- CCWS
+												  AND MATNR IN (SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) WHERE SYMBOL = #{key2})			
+											) MG 
+											LEFT OUTER JOIN TB_ECAT_CONT_F ECF WITH(NOLOCK)
+											  ON MG.MATNR = ECF.FILE_CD
+											WHERE ECF.FILE_TYP IN ('CC0020','CC0021')
+											GROUP BY MG.MATNR
+		               )
+		               AND IT.USE_YN = 'Y'
+		               AND IT.ESC_GB = 'Y'
+		             GROUP BY IT.IG_CD
+		  )
+		  AND IG.USE_YN = 'Y'
+	</select>
+  	
+	<select id="getAssyInsert" parameterType="String" resultType="AssemblyItemInfo">
+		<!-- Conclusion Insert -->	
+		SELECT
+			MG.MATNR,
+			MAX(CASE WHEN ECF.FILE_TYP = 'CC0020' THEN ECF.FILE_PHY_PATH ELSE '' END) STP_BASIC,
+			MAX(CASE WHEN ECF.FILE_TYP = 'CC0021' THEN ECF.FILE_PHY_PATH ELSE '' END) STP_DETAIL
+		FROM (
+			SELECT * FROM TB_ECAT_CONT_IT WITH(NOLOCK)
+			WHERE USE_YN = 'Y'
+			AND ESC_GB = 'Y'
+			  AND MATNR IN (					
+				SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) 
+				WHERE SYMBOL = 'IIC' 
+				  AND VAL LIKE CONCAT('%', #{iic}, '%') 
+				  AND MATNR NOT IN (SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) WHERE SYMBOL IN ('CCMS','CCWS'))
+			)
+		) MG 
+		LEFT OUTER JOIN TB_ECAT_CONT_F ECF WITH(NOLOCK)
+		  ON MG.MATNR = ECF.FILE_CD
+		WHERE ECF.FILE_TYP IN ('CC0020','CC0021')
+		GROUP BY MG.MATNR
+		ORDER BY MG.MATNR ASC
+  	</select>  	
+  	
+  	<!-- Assembly Insert 아이템의 아이템그룹 취득 -->
+  	<select id="getAssyInsertIgGroup" parameterType="String" resultType="AssemblyItemInfo">
+		<!-- Conclusion Insert -->	
+		SELECT IG.IG_CD
+		FROM TB_ECAT_CONT_IG IG
+		WHERE 1 = 1
+		  AND IG.IG_CD IN 
+		  (
+		             SELECT IT.IG_CD
+		             FROM TB_ECAT_CONT_IT IT
+		             WHERE 1 = 1
+		               AND IT.MATNR IN ( 
+			               SELECT
+								MG.MATNR
+							FROM (
+								SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) 
+								WHERE SYMBOL = 'IIC' 
+								  AND VAL LIKE CONCAT('%', #{iic}, '%') 
+								  AND MATNR NOT IN (SELECT DISTINCT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) WHERE SYMBOL IN ('CCMS','CCWS') 
+								)
+							) MG 
+							LEFT OUTER JOIN TB_ECAT_CONT_F ECF WITH(NOLOCK)
+							  ON MG.MATNR = ECF.FILE_CD
+							WHERE ECF.FILE_TYP IN ('CC0020','CC0021')
+							GROUP BY MG.MATNR                             
+		               )
+		               AND IT.USE_YN = 'Y'
+		               AND IT.ESC_GB = 'Y'
+		             GROUP BY IT.IG_CD
+		  )
+		  AND IG.USE_YN = 'Y'
+  	</select>  	
+  	
+  	<select id="getDetailStpPath" parameterType="String" resultType="String">
+		<!-- getDetailStpPath -->	
+		SELECT FILE_PHY_PATH
+		  FROM TB_ECAT_CONT_F WITH(NOLOCK)
+		 WHERE 1=1
+		   AND FILE_CD = #{matnr}
+		   AND FILE_TYP = 'CC0021'
+  	</select> 
+  	
+  	<select id="getSTPFiles" parameterType="String" resultType="AssemblyItemInfo">
+  	<!-- getSTPFiles -->
+		 SELECT WERKS
+				, FILE_CD
+				, MAX(STP_FILE_IMAGE_NM) AS STP_BASIC
+				, MAX(STP_FILE_DETAIL_IMAGE_NM) AS STP_DETAIL
+		 FROM (SELECT WERKS
+					, FILE_CD
+					, CASE WHEN FILE_TYP='CC0020' THEN FILE_PHY_PATH
+						ELSE '' END AS STP_FILE_IMAGE_NM
+					, CASE WHEN FILE_TYP='CC0021' THEN FILE_PHY_PATH
+						ELSE '' END AS STP_FILE_DETAIL_IMAGE_NM
+				   FROM TB_ECAT_CONT_F WITH(NOLOCK)
+				  WHERE USE_YN = 'Y'
+				    AND FILE_CD = #{matnr}
+				    AND FILE_TYP IN ('CC0020','CC0021')
+				  ) AS TMP
+				  GROUP BY WERKS, FILE_CD
+	</select>
+	
+	<select id="getAssyFilePath" parameterType="AssemblyFileInfo" resultType="String">
+		SELECT FILE_PHY_PATH
+	      FROM TB_ECAT_CONT_F WITH(NOLOCK)
+	     WHERE 1=1
+		   AND FILE_CD = #{file_cd}
+		   AND FILE_TYP = #{file_typ}
+	</select>
+	
+	<select id="getAssyFileCnt" parameterType="AssemblyFileInfo" resultType="int">
+		SELECT COUNT(*) FROM TB_ECAT_CONT_F WITH(NOLOCK)
+			WHERE WERKS = #{werks} 
+			  AND FILE_CD = #{file_cd}
+  		  	  AND FILE_TYP = #{file_typ}
+	</select>
+	
+	<delete id="deleteAssyFile" parameterType="AssemblyFileInfo">
+        DELETE TB_ECAT_CONT_F
+		 WHERE WERKS = #{werks}
+		   AND FILE_CD = #{file_cd}
+           AND FILE_TYP = #{file_typ}
+	</delete>
+	
+	<insert id="insertAssyFile" parameterType="AssemblyFileInfo">
+		<selectKey keyProperty="file_cnt" resultType="integer" order="BEFORE">
+			SELECT COUNT(*) AS FILE_CNT FROM TB_ECAT_CONT_F
+			WHERE FILE_CD = #{file_cd}
+  		  	  AND FILE_TYP = #{file_typ}
+		</selectKey>
+		<if test='file_cnt eq 0'>
+		    INSERT INTO TB_ECAT_CONT_F (
+		           WERKS
+		         , FILE_CD
+		         , FILE_SEQ
+		         , FILE_TYP
+		         , FILE_PHY_PATH
+		         , FILE_DWL_PATH
+		         , FILE_ORG_NM
+		         , FILE_THN_NM
+		         , USE_YN
+		         , FIR_ID
+		         , FIR_DT
+		    ) VALUES (
+		           #{werks}
+		         , #{file_cd}
+		         , (SELECT ISNULL(MAX(FILE_SEQ)+1, 1) FROM TB_ECAT_CONT_F WHERE WERKS = #{werks} AND FILE_CD = #{file_cd})
+		         , #{file_typ}
+		         , #{file_phy_path}
+		         , #{file_dwl_path}
+		         , #{file_org_nm}
+		         , #{file_thn_nm}
+		         , #{use_yn}
+		         , #{login_user_id}
+		         , GETDATE()
+		    )
+		</if>
+	</insert>
+	
+	<delete id="deleteP21Data" parameterType="GtcXmlVO">
+		DELETE FROM IF_P21_QUEUE 
+		 WHERE MAT_CODE IN
+			<foreach collection="arr_matnr" item="matnr" index="index" separator="," open="(" close=")">
+				#{matnr}
+           	</foreach>
+	</delete>
+	
+	<insert id="insertP21Data" parameterType="String">
+		INSERT INTO IF_P21_QUEUE (MAT_CODE)
+		VALUES (#{matnr})
+	</insert>
+	
+	<select id="selectP21Data" resultType="String">
+		SELECT  MAT_CODE
+		  FROM IF_P21_QUEUE WITH(NOLOCK)
+		 WHERE RESULT IS NULL
+	</select>
+	
+	<select id="selectGtcXmlData" parameterType="GtcXmlVO" resultType="GtcXmlVO">
+		SELECT ECIT.MATNR
+				, ISNULL(ECIT.VENDER_ID,'') AS VENDER_ID
+				, CASE WHEN GTC.GTC_GEN_ID IS NULL THEN (
+								SELECT
+									dbo.FN_REMOVE_SPECIAL_CHARS(value)
+								FROM (
+									SELECT
+										ROW_NUMBER() OVER(ORDER BY (SELECT 1)) AS RNUM,
+										*
+									FROM STRING_SPLIT((
+										 CASE 
+											WHEN ECIT.VENDER_ID IS NOT NULL THEN ECIT.VENDER_ID
+											ELSE '' END
+										 ), '_')
+									) T1
+								WHERE RNUM = 1
+						) ELSE GTC.GTC_GEN_ID END GTC_GEN_ID		
+				, ECF.ITEM_IMAGE_NM
+				, ECF.ISO_DD_IMAGE_NM
+				, ECF.STP_FILE_IMAGE_NM
+				, ECF.STP_FILE_DETAIL_IMAGE_NM
+				, ECF.DXF_FILE_IMAGE_NM
+				, ECF.P21_IMAGE_NM
+				, ISNULL(GTC.GTC_VER,'') AS GTC_VER
+				, ISNULL(LOWER(EC.CODE_VAL), '') AS UNIT
+		FROM TB_ECAT_CONT_IT ECIT WITH(NOLOCK)
+		LEFT OUTER JOIN TB_ECAT_CODE EC
+		ON ECIT.UNIT_CD = EC.CODE_KEY
+		LEFT OUTER JOIN (SELECT
+								(
+								SELECT
+									dbo.FN_REMOVE_SPECIAL_CHARS(value)
+								FROM (
+									SELECT
+										ROW_NUMBER() OVER(ORDER BY (SELECT 1)) AS RNUM,
+										*
+									FROM STRING_SPLIT((
+										 CASE 
+											WHEN EGH.GTC_VD_ID IS NOT NULL THEN EGH.GTC_VD_ID
+											ELSE '' END
+										 ), '_')
+									) T1
+								WHERE RNUM = 1
+								) AS GTC_GEN_ID
+								, GTC_VD_ID
+								,CASE 
+									WHEN EGH.GTC_VER IS NOT NULL THEN REPLACE(REPLACE(EGH.GTC_VER, 'V', ''), 'R', '.') 
+									ELSE '' END GTC_VER
+								FROM TB_ECAT_GTC_HIER EGH
+								) AS GTC
+		ON ECIT.VENDER_ID = GTC.GTC_VD_ID
+		LEFT OUTER JOIN (SELECT WERKS
+						, FILE_CD
+						, MAX(ITEM_IMAGE_NM) AS ITEM_IMAGE_NM
+						, MAX(ISO_DD_IMAGE_NM) AS ISO_DD_IMAGE_NM
+						, MAX(STP_FILE_IMAGE_NM) AS STP_FILE_IMAGE_NM
+						, MAX(STP_FILE_DETAIL_IMAGE_NM) AS STP_FILE_DETAIL_IMAGE_NM
+						, MAX(DXF_FILE_IMAGE_NM) AS DXF_FILE_IMAGE_NM
+						, MAX(P21_IMAGE_NM) AS P21_IMAGE_NM
+						FROM (SELECT WERKS
+									, FILE_CD
+									, CASE WHEN FILE_TYP='CC0017' THEN CONCAT(FILE_DWL_PATH, '/', FILE_THN_NM)
+										ELSE '' END AS ITEM_IMAGE_NM
+									, CASE WHEN FILE_TYP='CC0018' THEN CONCAT(FILE_DWL_PATH, '/', FILE_THN_NM)
+										ELSE '' END AS ISO_DD_IMAGE_NM
+									, CASE WHEN FILE_TYP='CC0020' THEN CONCAT(FILE_DWL_PATH, '/', FILE_ORG_NM)
+										ELSE '' END AS STP_FILE_IMAGE_NM
+									, CASE WHEN FILE_TYP='CC0021' THEN CONCAT(FILE_DWL_PATH, '/', FILE_ORG_NM)
+										ELSE '' END AS STP_FILE_DETAIL_IMAGE_NM
+									, CASE WHEN FILE_TYP='CC0022' THEN CONCAT(FILE_DWL_PATH, '/', FILE_ORG_NM)
+										ELSE '' END AS DXF_FILE_IMAGE_NM
+									, CASE WHEN FILE_TYP='CC0028' THEN CONCAT(FILE_DWL_PATH, '/', FILE_ORG_NM)
+										ELSE '' END AS P21_IMAGE_NM
+							 FROM TB_ECAT_CONT_F WITH(NOLOCK)
+							 WHERE USE_YN = 'Y'
+							   AND FILE_CD = #{matnr}
+							   AND FILE_TYP IN ('CC0017','CC0018','CC0019','CC0020','CC0021','CC0022', 'CC0028')
+							 ) AS TMP
+							 GROUP BY WERKS, FILE_CD
+						) AS ECF
+		ON ECF.FILE_CD = ECIT.MATNR
+		WHERE 1=1
+		  AND ECIT.MATNR = #{matnr}
+		  AND ECIT.USE_YN = 'Y'
+		  AND ECIT.ESC_GB = 'Y'
+	</select>
+	
+	<select id="selectGtcVer" parameterType="String" resultType="String">
+		SELECT CASE 
+			WHEN GTC_VER IS NOT NULL THEN REPLACE(REPLACE(GTC_VER, 'V', ''), 'R', '.') 
+			ELSE '' END GTC_VER
+		 FROM TB_ECAT_GTC_HIER WITH(NOLOCK)
+		WHERE GTC_VD_ID = #{gtc_gen_id}
+	</select>
+	
+	<select id="selectGtcPkgInfo" parameterType="String" resultType="java.util.HashMap">
+		SELECT    CONVERT(VARCHAR(2), SEQ) AS CODE_KEY
+				, CODE_VAL
+		FROM TB_ECAT_CODE WITH(NOLOCK)
+		WHERE PARENT_KEY = #{parent_key}
+		  AND USE_YN = 'Y'
+		ORDER BY SEQ ASC
+	</select>
+	<select id="selectLangCode" resultType="String">
+		SELECT LANG_CD
+		  FROM TB_ECAT_LANG WITH(NOLOCK)
+		 WHERE LANG_PACK = #{lang_pack}
+	</select>
+	
+	<!-- 장바구니 아이템 수량 수정 -->
+	<update id="updateCartItemQty" parameterType="AppInfo">
+		UPDATE	TB_ECAT_BASKET_D
+		SET		LST_DT			= getdate()
+				,LST_ID			= #{login_user_id}
+				,QTY			= (SELECT ISNULL(MAX(A.QTY)+1, 0) FROM TB_ECAT_BASKET_D A WHERE A.MATNR = #{matnr} AND A.CART_NO = CAST (#{cart_no} AS INTEGER))
+		WHERE	CART_NO			= CAST (#{cart_no} AS INTEGER)
+		  AND	MATNR			= #{matnr}
+		
+	</update>
+	<!-- 장바구니 수정 (총가격) -->
+	<update id="updateCart" parameterType="BasketInfo">
+		 UPDATE TB_ECAT_BASKET_M
+	     SET	LST_DT      	= getdate()
+		        ,TOTAL_PRICE 	= #{total_price}
+		        ,LST_ID      	= #{login_user_id}	
+		 WHERE  CART_NO     	= CAST (#{cart_no} AS INTEGER)
+	</update>
+	<!-- 장바구니에 동일한 아이템 있는지 확인 -->
+	<select id="selectDuplicatedItemCnt" parameterType="AssemblyInfo" resultType="int">
+		SELECT 	COUNT(1)			
+		FROM TB_ECAT_BASKET_D TEBD 
+		WHERE TEBD.CART_NO 	= #{cart_no}
+		  AND TEBD.MATNR 	= #{matnr}
+	</select>
+	<!-- 장바구니에 아이템 정보 취득 -> 장바구니 그룹의 총 가격을 수정할 때  사용 -->
+	<select id="selectCartItemList" parameterType="AssemblyInfo" resultType="BasketInfo">
+		      SELECT TEBD.CART_NO
+              ,TEBD.MATNR
+              ,TEBD.PRICE
+              ,TEBD.QTY
+              ,( SELECT CODE.CODE_VAL
+             	 FROM 	TB_ECAT_CODE CODE
+             	 WHERE 	CODE.CODE_KEY = TEBD.CUR)	AS CUR
+	    FROM   TB_ECAT_BASKET_D TEBD
+	    WHERE  TEBD.CART_NO 	= CAST(#{cart_no} AS INTEGER)
+	      AND  EXISTS( SELECT 	CART_NO
+	      			  FROM 		TB_ECAT_BASKET_M TEBM
+	      			  WHERE		TEBM.CART_NO = TEBD.CART_NO
+	      				AND		TEBM.USER_ID = #{login_user_id}
+	      		)
+	      AND	TEBD.USE_YN = 'Y'
+	</select>
+	<!-- 장바구니 등록 -->
+	<insert id="insertCart" parameterType="AssemblyInfo" useGeneratedKeys="true" keyProperty="cart_no" >
+        INSERT INTO TB_ECAT_BASKET_M (
+            USER_ID 
+           ,CART_NM
+           ,USE_YN
+           ,FIR_ID		
+           ,FIR_DT		
+           ,LST_ID		
+           ,LST_DT		
+        ) VALUES (
+            #{login_user_id}
+           ,#{cart_nm}
+           ,'Y'
+           ,#{login_user_id}
+           ,getdate()
+           ,#{login_user_id}
+           ,getdate()
+        )
+	</insert>
+	
+	<!-- 장바구니 아이템 추가 -->
+	<insert id="insertCartItem" parameterType="AssemblyInfo">
+       INSERT INTO TB_ECAT_BASKET_D (
+            CART_NO
+           ,WERKS
+           ,MATNR
+           ,DESIGNATION
+           ,GRADE
+           ,QTY
+           ,USE_YN
+           ,FIR_ID		
+           ,FIR_DT		
+           ,LST_ID		
+           ,LST_DT	
+        ) VALUES (
+            CAST (#{cart_no} AS INTEGER)
+           ,(SELECT WERKS FROM TB_ECAT_CONT_IT WHERE MATNR = #{matnr})
+           ,#{matnr}
+           ,(SELECT DESIGNATION FROM TB_ECAT_CONT_IT WHERE MATNR = #{matnr})
+           ,(SELECT GRADE FROM TB_ECAT_CONT_IT WHERE MATNR = #{matnr} )
+           ,1
+           ,'Y'
+           ,#{login_user_id}
+           ,getdate()
+           ,#{login_user_id}
+           ,getdate()
+        )
+	</insert>
+	
+	<select id="selectAssemMstInfo" parameterType="AssemblyInfo" resultType="AssemblyInfo">
+		SELECT
+			ASSEM_NO
+			, USER_ID
+			, ASSEM_NM
+			, ASSEM_DESC
+			, STP_B_FILE
+			, STP_D_FILE
+			, DXF_FILE
+			, GTC_FILE
+			, P21_FILE
+			, USE_YN
+		FROM
+			TB_ECAT_ASSEM_M
+		WHERE
+			ASSEM_NO = #{assem_no}
+	</select>
+	
+	<!-- Assembly 의 아이템그룹 취득 -->
+	<select id="getAssyIgGroup" parameterType="AssemblyItemInfo" resultType="AssemblyItemInfo">
+		SELECT IG.IG_CD
+		FROM TB_ECAT_CONT_IG IG
+		WHERE 1 = 1
+		  AND IG.IG_CD IN 
+		  (
+		             SELECT IT.IG_CD
+		             FROM TB_ECAT_CONT_IT IT
+		             WHERE 1 = 1
+		               AND IT.MATNR IN 
+		               <foreach collection="matnr_arr" item="matnr" index="index" separator="," open="(" close=")">
+		                #{matnr}
+		               </foreach>
+		               AND IT.USE_YN = 'Y'
+		               AND IT.ESC_GB = 'Y'
+		             GROUP BY IT.IG_CD
+		  )
+		  AND IG.USE_YN = 'Y'
+	</select>
+	
+	<!-- 서브어플리케이션코드 취득 -->
+	<select id="selectSaCd" parameterType="AssemblyItemInfo" resultType="AssemblyItemInfo">
+		SELECT DISTINCT SA_CD 
+		FROM TB_ECAT_CONT_IG_HIER IG_HIER
+		WHERE 1=1
+	       <if test='ig_cd_arr != null and ig_cd_arr != ""'>
+	       AND IG_HIER.IG_CD IN
+	            <foreach separator="," open="(" close=")" collection="ig_cd_arr" item="ig_cd" index="index">
+	               #{ig_cd}
+	           </foreach>
+	       </if>
+		AND USE_YN = 'Y'
+	</select>
+	
+	<!-- Assembly 생성 상태 변경 -->
+	<update id="updateAssemblyState" parameterType="AssemblyInfo">
+		UPDATE 
+			TB_ECAT_ASSEM_M
+	    SET		
+	    	LST_DT      = getdate()
+	    	, LST_ID    = #{login_user_id}
+		    , BULD_STA  = #{buld_sta}
+		    <if test='buld_sta == "ING"'>
+		    , BULD_ST   = getdate()
+		    </if>
+		    <if test='buld_sta == "OK"'>
+		    , BULD_ET   = getdate()
+		    </if>
+		    <if test='buld_sta == "FAIL"'>
+		    , BULD_MSG  = #{buld_msg}
+		    </if>
+	    WHERE  
+	    	ASSEM_NO    = CAST (#{assem_no} AS INTEGER)
+	</update>
+	
+	<!-- Assembly 생성중 갯수 조회 -->
+	<select id="selectAssemblyCreateIngCnt" parameterType="AssemblyInfo" resultType="int">
+		SELECT COUNT(1)
+		FROM TB_ECAT_ASSEM_M M
+		WHERE BULD_STA = 'ING'
+		AND M.USER_ID = #{login_user_id}
+		AND M.USE_YN = 'Y'
+	</select>
+	
+	<!-- Assembly 생성후 Location 등록 -->
+	<insert id="insertAssemblyLocation" parameterType="AssemblyItemInfo">
+        INSERT INTO TB_ECAT_ASSEM_LOC (
+           ASSEM_NO
+           ,MATNR 
+           ,LOCATION
+           ,ASSEM_QTY
+           ,FIR_ID
+           ,FIR_DT		
+           ,LST_ID		
+           ,LST_DT		
+        ) VALUES (
+            #{assem_no}
+           ,#{matnr}
+           ,#{location}
+           ,1
+           ,#{login_user_id}
+           ,getdate()
+           ,#{login_user_id}
+           ,getdate()
+        )
+	</insert>
+	
+	<!-- Assembly Location 삭제 -->
+	<delete id="deleteAssemblyLocation" parameterType="AssemblyInfo">
+	    DELETE FROM TB_ECAT_ASSEM_LOC
+	    WHERE  ASSEM_NO = CAST (#{assem_no} AS INTEGER)	    
+	    <if test='matnr != null and matnr != ""'>
+		AND MATNR = #{matnr}
+		</if>
+	</delete>
+
+	<!-- Assembly Location 갯수 조회 -->
+	<select id="selectAssemblyLocationCnt" parameterType="AssemblyInfo" resultType="int">
+		SELECT COUNT(1) 
+		FROM TB_ECAT_ASSEM_LOC LOC 
+		WHERE LOC.ASSEM_NO = CAST (#{assem_no} AS INTEGER)
+		AND LOC.MATNR = #{matnr}
+	</select>
+		
+	<!-- Assembly Location 조회 -->
+	<select id="selectAssemblyLocation" parameterType="AssemblyInfo" resultType="AssemblyItemInfo">
+		SELECT
+			LOC.ASSEM_NO 
+	    	,LOC.MATNR 
+	    	,LOC.LOCATION 
+	    FROM TB_ECAT_ASSEM_LOC LOC
+	    WHERE LOC.ASSEM_NO = CAST (#{assem_no} AS INTEGER)	    
+	    <if test='login_user_id != null and login_user_id != ""'>
+		AND LOC.FIR_ID = #{login_user_id}
+		</if>
+	    ORDER BY LOC.LOCATION
+	</select>
+	
+</mapper>

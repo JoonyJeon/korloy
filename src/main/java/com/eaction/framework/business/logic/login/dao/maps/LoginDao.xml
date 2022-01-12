@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.eaction.framework.business.logic.login.dao.LoginDao">
+<!-- // 한국야금 -->
+	<!-- 로그인 -->
+	<select id="selectUserInfo" parameterType="User" resultType="User">
+	    SELECT TEU.USER_ID
+              ,TEU.USER_NAME 
+              ,TEU.USER_PWD
+              ,TEU.USER_MOBILE
+              ,TEU.USER_COMPANY 
+              ,TEU.USER_COM_MAIL 
+              ,TEU.USER_COM_ADDR 
+              ,TEU.USER_POSITION 
+              ,TEU.USER_GRP 
+              ,TEU.USER_NATION
+              ,TEU.USER_LANG 
+              ,TEU.UNIT_CD 
+              ,TEU.CURR_CD 
+  		      ,(SELECT CODE_VAL
+  		        FROM  TB_ECAT_CODE
+  		        WHERE CODE_KEY = TEU.CURR_CD) AS CURR_NM
+              ,TEU.ACCOUNT_CD 
+              ,TEU.BIGO 
+              ,TEU.USE_YN 
+  		      ,(SELECT TEN.EMAIL_TO
+  		        FROM   TB_ECAT_NATION TEN
+  		        WHERE  TEN.NATION_CD = TEU.USER_NATION) AS UG_EMP
+  		      ,TEU.USER_COM_TEL
+              ,TEU.FIR_ID 
+              ,TEU.FIR_DT 
+              ,TEU.LST_ID 
+              ,TEU.LST_DT
+        FROM   TB_ECAT_USER TEU
+        WHERE  TEU.USER_ID = #{user_id}
+       	<if test='user_pwd != null and user_pwd != ""'>
+          AND  PwdCompare(#{user_pwd}, TEU.USER_PWD) = 1
+       	</if>
+	</select>
+	
+	<!-- 회원 비밀번호 변경 -->
+	<update id="updateUserPw" parameterType="User">
+	    UPDATE TB_ECAT_USER
+	    SET    USER_PWD = Pwdencrypt(#{user_pwd})
+	          ,LST_ID = #{user_id}
+	          ,LST_DT = getdate()
+	    WHERE  USER_ID = #{user_id}
+	</update>
+<!-- // 한국야금 //////////////////////////////////// -->
+  	
+    <!-- 유저 정보 검색 -->
+<!-- 	<select id="selectUserInfo" parameterType="User" resultType="User" > -->
+<!-- 	    SELECT A.EMP_ID USER_ID -->
+<!-- 	          ,A.EMPNM USER_NM  -->
+<!-- 	          ,A.USER_GROUP_ID GROUP_ID -->
+<!-- 	          ,B.GROUP_NM -->
+<!-- 	          ,A.SMSPHONE MOBILE  -->
+<!-- 	          ,A.EMAIL  -->
+<!-- 	          ,B.LEVELCOD GROUPLEVELCOD -->
+<!-- 	          ,A.STATUS -->
+<!-- 	      FROM MGMT_USER_INFO A, MGMT_USER_GRP B -->
+<!-- 	     WHERE A.EMP_ID = #{user_id} -->
+<!-- 	       AND A.PASSWORD = #{password} -->
+<!-- 	       AND A.STATUS = '01' -->
+<!-- 	       AND A.USER_GROUP_ID = B.GROUP_ID -->
+<!--     </select> -->
+      
+    <!-- 로그인/로그아웃시 로그 생성 -->
+    <insert id="setConnLog" parameterType="User">
+        INSERT INTO MGMT_LOGIN_HIS (
+        						 USER_ID
+								,SESSION_ID
+								,LOGIN_DATE
+								,LOGIN_TIME
+								,CRT_ID
+								,CRT_DT
+								,UPD_ID
+								,UPD_DT
+                               )
+                        VALUES (
+                        		 #{user_id}
+                        		,#{session_id}
+                               	,DATE_FORMAT(now(),'%Y%m%d')
+                               	,DATE_FORMAT(now(),'%H%i%s')
+                               	,#{user_id}
+                               	,now()
+                               	,#{user_id}
+                               	,now()
+                               )
+    </insert>
+    
+    <!-- 유저 세션ID 검색 -->
+	<select id="selectUserSessionId" parameterType="User" resultType="String" >
+		SELECT
+			SESSIN_ID 
+		FROM
+			MGMT_LOGIN_HIS A
+		WHERE
+			CRT_DT = (
+			SELECT
+				MAX(CRT_DT)
+			FROM
+				MGMT_LOGIN_HIS
+			WHERE
+				USER_ID = A.USERID )
+			AND USER_ID = #{user_id}
+	</select>
+    
+    <!-- 로그인 유저 ip 검사 -->
+    <select id="selectUserIp" resultType="String">
+		SELECT A.CODE FROM mgmt_syscod2t A
+		WHERE A.GRCODE = 'MGMT_USER_IP_LIST'
+    </select>
+    
+    <!-- 로그인실패 카운트 처리 -->
+	<update id="updateLoginFailCnt" parameterType="User">
+		UPDATE	MGMT_USER_INFO
+		SET		LOGIN_FAIL_CNT = LOGIN_FAIL_CNT+ 1, 
+					STATUS = CASE WHEN LOGIN_FAIL_CNT >= 4 THEN '02' ELSE STATUS END,
+	    			UPD_ID = #{user_id},
+	    			UPD_DT = NOW()
+		WHERE	EMP_ID = #{user_id}
+
+	</update>
+	
+	<!-- 로그인성공 카운트 처리 -->
+	<update id="updateLoginSuccessCnt" parameterType="User">
+		UPDATE	MGMT_USER_INFO
+		SET		LOGIN_FAIL_CNT = 0, 
+					STATUS = '01',
+	    			UPD_ID = #{user_id},
+	    			UPD_DT = NOW()
+		WHERE	EMP_ID = #{user_id}
+
+	</update>
+    
+</mapper>

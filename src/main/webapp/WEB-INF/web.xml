@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" id="WebApp_ID" version="3.1">
+    <display-name>EACTION</display-name>
+    <welcome-file-list>
+	    <welcome-file>index.html</welcome-file>
+	    <welcome-file>index.htm</welcome-file>
+	    <welcome-file>index.jsp</welcome-file>
+	    <welcome-file>default.html</welcome-file>
+	    <welcome-file>default.htm</welcome-file>
+	    <welcome-file>default.jsp</welcome-file>
+    </welcome-file-list>
+  
+   <!-- set session Timeout -->
+	<session-config>
+	    <session-timeout>120</session-timeout>
+	</session-config>
+	
+	<filter>
+    	<filter-name>SessionTimeoutCookieFilter</filter-name>
+    	<filter-class>com.eaction.framework.common.filter.SessionTimeoutCookieFilter</filter-class>
+	</filter>
+	
+	<filter-mapping>
+    	<filter-name>SessionTimeoutCookieFilter</filter-name>
+    	<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+    <filter>
+    	<filter-name>Encoding Filter</filter-name>
+    	<filter-class>com.eaction.framework.common.filter.EncodingFilter</filter-class>
+	    <init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+	    </init-param>
+  	</filter>
+
+    <filter-mapping>
+		<filter-name>Encoding Filter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	
+   <!--  <filter>
+	    <filter-name>xssEscapeServletFilter</filter-name>
+	    <filter-class>com.navercorp.lucy.security.xss.servletfilter.XssEscapeServletFilter</filter-class>
+	</filter>
+	<filter-mapping>
+	    <filter-name>xssEscapeServletFilter</filter-name>
+	    <url-pattern>/*</url-pattern>
+	</filter-mapping> -->
+	
+  <!--	
+	<filter> 
+	    <filter-name>encodingFilter</filter-name> 
+	    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class> 
+	    <init-param> 
+	       <param-name>encoding</param-name> 
+	       <param-value>UTF-8</param-value> 
+	    </init-param> 
+	    <init-param> 
+	       <param-name>forceEncoding</param-name> 
+	       <param-value>true</param-value> 
+	    </init-param> 
+	 </filter> 
+	 
+	 <filter-mapping> 
+	    <filter-name>encodingFilter</filter-name> 
+	    <url-pattern>/*</url-pattern> 
+	 </filter-mapping>
+  -->	
+    <listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+  
+    <servlet>
+		<servlet-name>EACTION</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>	
+		<load-on-startup>2</load-on-startup>
+    </servlet>
+  
+    <context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>
+		    /WEB-INF/applicationContext*.xml	  
+		    classpath:mybatis.xml
+		</param-value>
+    </context-param>   
+      
+    <servlet-mapping>
+		<servlet-name>EACTION</servlet-name>
+		<url-pattern>*.do</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+		<servlet-name>EACTION</servlet-name>
+		<url-pattern>*.pop</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+		<servlet-name>EACTION</servlet-name>
+		<url-pattern>*.go</url-pattern>
+    </servlet-mapping>
+	
+    <filter>
+		<filter-name>sitemesh</filter-name>
+		<filter-class>com.opensymphony.module.sitemesh.filter.PageFilter</filter-class>
+	</filter>	
+	
+	<!-- sitemesh--> 
+	<filter-mapping>
+		<filter-name>sitemesh</filter-name>
+		<url-pattern>/*</url-pattern>		
+	</filter-mapping>
+	
+	<welcome-file-list>
+		<welcome-file>index.jsp</welcome-file>
+	</welcome-file-list>
+	
+  	<!-- 에러난 메세지를 확인하기 위해서 개발 시는 막아놓는다 운영시는 열어놓으면 에러 발생한 경우 에러페이지로 이동함	 -->
+  	<error-page>
+    	<location>/WEB-INF/jsp/common/error/catchException.jsp</location>
+  	</error-page>
+	<jsp-config>
+        <taglib>
+            <taglib-uri>/WEB-INF/tld/eaction.tld</taglib-uri>
+            <taglib-location>/WEB-INF/tld/eaction.tld</taglib-location>
+        </taglib>
+    </jsp-config>
+    
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>restricted methods</web-resource-name>
+			<url-pattern>/*</url-pattern>
+			<http-method>PUT</http-method>
+			<http-method>DELETE</http-method>
+		</web-resource-collection>
+		<auth-constraint />
+	</security-constraint>
+</web-app>

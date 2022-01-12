@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.eaction.framework.business.common.code.dao.CodeDao">
+
+    <!-- 화면페이지별오브젝트명칭정보를 취득한다 -->
+	<select id="getCodeInfo" resultType="CodeInfo">	        
+		SELECT	CODE_KEY AS CODE,
+				CODE_VAL AS NAME,
+				CODE_VAL AS CODENM,
+				CODE_VAL AS CODENM_K,
+				CODE_VAL AS CODENM_E,
+				CODE_VAL AS CODENM_J,
+				PARENT_KEY AS UPCODE
+		FROM 	TB_ECAT_CODE T
+		WHERE	USE_YN = 'Y'
+		ORDER BY PARENT_KEY, SEQ
+	</select>
+	
+	<select id="getCodeGroup" resultType="String">	        
+		SELECT	PARENT_KEY
+		FROM 	TB_ECAT_CODE T
+		WHERE	USE_YN = 'Y'
+		GROUP BY PARENT_KEY
+	</select>
+
+    <select id="getNationCodeInfo" resultType="CodeInfo">         
+        SELECT  NATION_CD AS CODE,
+                NATION_EN_NM AS NAME,
+                NATION_EN_NM AS CODENM,
+                NATION_KR_NM AS CODENM_K,
+                NATION_EN_NM AS CODENM_E,
+                NATION_EN_NM AS CODENM_J
+        FROM    TB_ECAT_NATION T
+        ORDER BY NATION_IDX
+    </select>
+    
+    <select id="getPrivacyInfo" resultType="CodeInfo" parameterType="String">         
+        SELECT  LANG_CD AS CODE,
+                   DESCR AS NAME
+        FROM   TB_ECAT_CONT_PIPA T
+        WHERE  LANG_CD = #{lang_code}
+    </select>
+</mapper>
+
+

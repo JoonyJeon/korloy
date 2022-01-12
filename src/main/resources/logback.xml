@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>    
+  
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+    <jmxConfigurator />
+    
+    <if condition='property("spring.profiles.active").equals("server")'>
+	    <then>
+	        <property name="LOG_FILE" value="c:\\Program Files\\Apache Software Foundation\\tomcat_front\\logs\\logback.log" />
+	        <property name="LOG_PATTERN" value="c:\\Program Files\\Apache Software Foundation\\tomcat_front\\logs\\logback.%d{yyyy-MM-dd}.%i.log.gz" />
+	    </then>
+	    <!-- 개발서버 -->
+	    <else>	    
+	        <property name="LOG_FILE" value="c:\\temp\\logs\\logback.log" />
+	        <property name="LOG_PATTERN" value="c:\\temp\\logs\\logback.%d{yyyy-MM-dd}.%i.log.gz" />
+	    </else>
+	    <!-- 운영서버
+        <else>      
+            <property name="LOG_FILE" value="d:\\temp\\logs\\logback.log" />
+            <property name="LOG_PATTERN" value="d:\\temp\\logs\\logback.%d{yyyy-MM-dd}.%i.log.gz" />
+        </else>
+         -->
+    </if>
+    
+    <appender name="SAMPLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss}:%-3relative][%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <encoder>
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss}:%-3relative][%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATTERN}</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <!-- or whenever the file size reaches 100MB -->
+                <maxFileSize>5MB</maxFileSize>
+                <!-- kb, mb, gb -->
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+     
+    <logger name="com.eaction" level="DEBUG" >
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+    </logger>
+    
+    <logger name="jdbc" level="OFF"/>
+    <logger name="jdbc.sqlonly" level="OFF"/>
+    <logger name="jdbc.sqltiming" level="OFF"/>
+    <logger name="jdbc.audit" level="OFF"/>
+    <logger name="jdbc.resultset" level="OFF"/>
+    <logger name="jdbc.resultsettable" level="OFF"/>
+    <logger name="jdbc.connection" level="OFF"/>
+  
+ 
+<!-- WAS Start option -Dspring.profiles.active=server setting is operation server or nothing is developer environment--> 
+	<if condition='property("spring.profiles.active").equals("server")'>
+	    <then>
+	        <root level="INFO">
+		        <appender-ref ref="FILE" />
+		        <appender-ref ref="SAMPLE" />
+		    </root>
+	    </then>  
+	    <else>
+	        <root level="DEBUG">
+	            <!--  <appender-ref ref="FILE" /> -->
+		        <appender-ref ref="SAMPLE" />
+		    </root>	    
+	    </else>
+	</if>
+
+</configuration>

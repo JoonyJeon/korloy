@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- DAO 구현체 자동생성을 위한 DAO 인터페이스 정의 -->
+<mapper namespace="com.eaction.framework.business.logic.basic.dao.BasicDao">
+
+	
+	<!-- 사용자 권한 취득 -->
+	<select id="selectUserAuthInfo" resultType="AuthInfo" parameterType="String">
+		SELECT *
+		FROM  TB_ECAT_USER_AUTH
+        WHERE USE_YN = 'Y'
+        AND USER_GRP = #{user_group}
+	</select>
+	
+    <!-- 사용자 권한 취득 -->
+    <insert id="doLog" parameterType="LogInfo">
+		INSERT INTO TB_ECAT_EVT_D
+	           (EVT_CD
+	           ,ITEM
+	           ,IP_ADDR
+	           ,USER_ID
+	           ,EVT_DESC
+	           ,EVT_TIME)
+	     VALUES
+	           (#{evt_cd}
+	           ,#{item, jdbcType=NVARCHAR}
+	           ,#{ip_addr}
+	           ,#{user_id}
+	           ,#{evt_desc, jdbcType=NVARCHAR}
+	           ,GETDATE())
+    </insert>
+
+	
+</mapper>

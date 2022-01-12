@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<beans 
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.springframework.org/schema/beans"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:mvc="http://www.springframework.org/schema/mvc"
+        xmlns:tx="http://www.springframework.org/schema/tx"
+        xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd   
+                            http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd    
+                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd" >
+ 
+    <bean id="environmentVariablesConfiguration" class="org.jasypt.encryption.pbe.config.EnvironmentStringPBEConfig">
+        <property name="algorithm" value="PBEWithMD5AndDES" />
+        <property name="passwordEnvName" value="APP_ENCRYPTION_PASSWORD" />
+    </bean>
+  
+    <bean id="configurationEncryptor" class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor">
+        <property name="config" ref="environmentVariablesConfiguration" />
+        <property name="password" value="jasyptPass" />
+    </bean>
+ 
+    <bean id="jdbcJSettings" class="org.jasypt.spring31.properties.EncryptablePropertyPlaceholderConfigurer">
+        <constructor-arg ref="configurationEncryptor" />
+        <property name="location" value="classpath:jdbc.properties" />
+        <property name="placeholderPrefix" value="$J{" />
+    </bean>
+ 
+	<!-- Data Source -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+	    <property name="driverClassName" value="$J{jdbc.driverClassName}" />
+	  	<property name="url" value="$J{jdbc.url}" />
+	  	<property name="username" value="$J{jdbc.username}" />
+	  	<property name="password" value="$J{jdbc.password}" />
+	  	<property name="maxActive" value="10" />
+		<property name="maxIdle" value="3" />
+		<property name="maxWait" value="10000" />
+		<property name="defaultAutoCommit" value="true" />   <!-- 기본:true -->
+		<property name="validationQuery" value="select 1" /> 
+	</bean>
+	 
+	<!-- MyBatis Sql Session Template -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+	    <property name="dataSource" ref="dataSource" />
+	    <property name="configLocation" value="classpath:mybatis-config.xml" />  
+	    <property name="mapperLocations">
+		    <list>  		
+	  		    <value>classpath:com/eaction/**/maps/*.xml</value>
+	  	    </list>
+	    </property>	  
+	    <property name="typeAliasesPackage" value="com.eaction.**.model" />	  
+	</bean>
+		
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.eaction.**.dao" />
+    </bean>
+     
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+	    <constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+	
+		
+	<!-- Transaction Manager -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	    <property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<tx:annotation-driven proxy-target-class="true" transaction-manager="transactionManager"/>	
+    
+</beans>

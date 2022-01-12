@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans 
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:aop="http://www.springframework.org/schema/aop"
+        xmlns="http://www.springframework.org/schema/beans"
+        xmlns:p="http://www.springframework.org/schema/p"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:mvc="http://www.springframework.org/schema/mvc"
+        xmlns:task="http://www.springframework.org/schema/task"
+        xsi:schemaLocation="http://www.springframework.org/schema/mvc
+                            http://www.springframework.org/schema/mvc/spring-mvc.xsd    http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop.xsd    http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans.xsd    http://www.springframework.org/schema/context
+                            http://www.springframework.org/schema/context/spring-context.xsd
+                            http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+    
+    <mvc:annotation-driven />
+    <context:annotation-config />
+    <context:component-scan base-package="com.eaction" />
+    <task:annotation-driven />
+    
+    <!-- 사용자 인증여부 체크 interceptor -->    
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<mvc:exclude-mapping path="/login.go"/>
+			<mvc:exclude-mapping path="/idPwFindPopup.go"/>
+			<bean class="com.eaction.framework.common.interceptor.LoginCheckInterceptor" />
+		</mvc:interceptor>
+        <mvc:interceptor>
+            <mvc:mapping path="/**" />
+            <bean class="org.springframework.mobile.device.DeviceResolverHandlerInterceptor"></bean>
+        </mvc:interceptor>
+	</mvc:interceptors>
+	
+	<!-- @ResponseBody로 String 처리할때 한글처리 --> 
+	<mvc:annotation-driven> 
+	    <mvc:message-converters>
+	        <bean class="org.springframework.http.converter.StringHttpMessageConverter"> 
+	            <property name="supportedMediaTypes"> 
+	                <list> 
+	                    <value>text/html;charset=UTF-8</value> 
+	                    <value>application/json; charset=UTF-8</value>
+	                </list> 
+	            </property> 
+	        </bean>
+	    </mvc:message-converters>
+	    <mvc:argument-resolvers>
+	        <bean class="org.springframework.mobile.device.DeviceWebArgumentResolver" />
+	    </mvc:argument-resolvers>
+	</mvc:annotation-driven>
+
+  <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+      <property name="defaultEncoding" value="UTF-8" />
+      <property name="cacheSeconds" value="5"/>
+      <property name="basenames" >
+          <list>
+              <value>/WEB-INF/messages/framework_text</value>
+          </list>
+      </property>
+  </bean>
+
+  <bean id="messageSourceAccessor" class="org.springframework.context.support.MessageSourceAccessor">
+      <constructor-arg ref="messageSource"/>
+  </bean>
+	
+	<!-- 메모리 임시서버 사용시 -->
+	<bean id="memory-conf" class="com.eaction.framework.business.system.memory.MemoryConfigurer" init-method="init" /> 
+</beans>

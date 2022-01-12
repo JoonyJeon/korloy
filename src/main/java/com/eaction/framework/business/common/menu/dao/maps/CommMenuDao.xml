@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.eaction.framework.business.common.menu.dao.CommMenuDao">
+   
+    <!-- 화면페이지별오브젝트명칭정보를 취득한다 -->
+	<select id="getMenuInfo" resultType="MenuInfo">
+	    SELECT B.LEVELCOD AS groupLevel
+              ,A.MENU_ID  AS menuId
+              ,A.MENU_NM_KOR AS menuNmKor
+              ,A.MENU_NM_ENG AS menuNmEng
+              ,A.MENU_NM_JPN AS menuNmJpn
+              ,A.P_MENU_ID  AS upMenuId
+              ,A.MENU_TYPE  AS menuType
+              ,A.SEQ  AS seq
+              ,A.URL  AS url
+              ,A.LVL AS lvl
+              ,A.MENU_ICON AS menu_icon
+              ,B.EDIT_YN AS edit_yn
+        FROM (
+        SELECT MENU_ID
+             <!-- , (CASE SUBSTR(#{p_src_env}, 1, 3) WHEN 'KOR' THEN MENU_NM_KOR WHEN 'ENG' THEN MENU_NM_ENG WHEN 'JPN' THEN MENU_NM_JPN ELSE MENU_NM_KOR END) AS MENU_NM -->
+             , MENU_NM_KOR
+             , MENU_NM_ENG
+             , MENU_NM_JPN
+             , P_MENU_ID
+             , MENU_TYPE
+             , SEQ
+             , URL
+             , LVL
+             , MENU_ICON
+        FROM MGMT_MENU_MST
+       ) A,  MGMT_LEVEL_MENU B
+        WHERE A.MENU_ID   = B.MENU_ID
+          AND (CASE WHEN A.P_MENU_ID = '' THEN '1' WHEN A.P_MENU_ID IS NULL THEN '1' ELSE A.P_MENU_ID END)
+          	= (CASE WHEN B.P_MENU_ID = '' THEN '1' WHEN B.P_MENU_ID IS NULL THEN '1' ELSE B.P_MENU_ID END)                              
+        ORDER BY A.SEQ
+	</select>
+	    
+    <!-- 메뉴리스트정보를 취득한다 -->
+	<select id="selectMenuInfoList" resultType="MenuInfo">
+	     SELECT MENU_ID AS menuId
+             <!-- , (CASE SUBSTR(#{p_src_env}, 1, 3) WHEN 'KOR' THEN MENU_NM_KOR WHEN 'ENG' THEN MENU_NM_ENG WHEN 'JPN' THEN MENU_NM_JPN ELSE MENU_NM_KOR END) AS MENU_NM --> 
+             , MENU_NM_KOR AS menuNmKor
+             , MENU_NM_ENG AS menuNmEng
+             , MENU_NM_JPN AS menuNmJpn
+             , P_MENU_ID  AS upMenuId
+             , MENU_TYPE  AS menuType
+             , SEQ  AS seq
+             , URL  AS url
+             , LVL AS lvl
+             , MENU_ICON AS menu_icon
+        FROM MGMT_MENU_MST
+        ORDER BY SEQ
+	</select>
+    
+</mapper>

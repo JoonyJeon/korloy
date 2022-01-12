@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.eaction.framework.business.logic.order.dao.OrderDao">
+
+	<!-- 주문요청서 작성 페이지 주문자 초기 표시값 -->
+	<select id="selectOrderUserInfo" parameterType="OrderInfo" resultType="OrderInfo">
+        SELECT * 
+        FROM   (SELECT ROW_NUMBER() OVER (ORDER BY ORDER_NO DESC)  AS ROWNUM
+                      ,*
+                FROM   TB_ECAT_BASKET_O TEBO2
+                WHERE  TEBO2.USER_ID = #{login_user_id}
+                ) T_LAST_ORDER
+        WHERE T_LAST_ORDER.ROWNUM BETWEEN 0 AND 1
+	</select>
+	
+	<!-- 선택 장바구니 리스트 갯수 -->
+	<select id="selectOrderBasketListCnt" parameterType="OrderInfo" resultType="int">
+        SELECT COUNT(1)
+        FROM   TB_ECAT_BASKET_M TEBM
+        WHERE  TEBM.CART_NO IN
+	    <foreach separator="," open="(" close=")" collection="cart_no_arr" item="cart_no" index="index">
+            #{cart_no}
+	    </foreach>
+          AND  TEBM.USE_YN = 'Y'
+	</select>	
+	
+	<!-- 선택 장바구니 리스트 -->
+	<select id="selectOrderBasketList" parameterType="OrderInfo" resultType="BasketInfo">
+        SELECT TEBM.CART_NO
+              ,TEBM.USER_ID
+              ,TEBM.CART_NM
+              ,TEBM.CART_DESC
+              ,(SELECT CASE 
+                           WHEN 'CC0076' = #{comm_cur} 
+                           THEN ISNULL(SUM(TECI.K_KBETR * TEBD.QTY), 0)
+                           WHEN 'CC0077' = #{comm_cur} 
+                           THEN ISNULL(ROUND(SUM(CONVERT(FLOAT, TECI.U_KBETR) * TEBD.QTY), 2), 0)
+                           ELSE ISNULL(ROUND(SUM(CONVERT(FLOAT, TECI.E_KBETR) * TEBD.QTY), 2), 0)
+                       END
+                FROM   TB_ECAT_CONT_IT TECI
+                      ,TB_ECAT_BASKET_D TEBD
+                WHERE  TECI.MATNR = TEBD.MATNR
+                  AND  TEBD.CART_NO =TEBM.CART_NO
+                  AND  TECI.USE_YN = 'Y') TOTAL_PRICE
+              ,(SELECT ISNULL(SUM(TECI.K_KBETR * TEBD.QTY), 0)
+                FROM   TB_ECAT_CONT_IT TECI
+                       ,TB_ECAT_BASKET_D TEBD
+                WHERE  TECI.MATNR = TEBD.MATNR
+                  AND  TEBD.CART_NO =TEBM.CART_NO
+                  AND  TECI.USE_YN = 'Y')K_KBETR
+                ,(SELECT ISNULL(ROUND(SUM(CONVERT(FLOAT, TECI.U_KBETR) * TEBD.QTY), 2), 0)
+                  FROM   TB_ECAT_CONT_IT TECI
+                        ,TB_ECAT_BASKET_D TEBD
+                WHERE  TECI.MATNR = TEBD.MATNR
+                  AND  TEBD.CART_NO =TEBM.CART_NO
+                  AND  TECI.USE_YN = 'Y')U_KBETR
+                ,(SELECT ISNULL(ROUND(SUM(CONVERT(FLOAT, TECI.E_KBETR) * TEBD.QTY), 2), 0)
+                  FROM   TB_ECAT_CONT_IT TECI
+                        ,TB_ECAT_BASKET_D TEBD
+                WHERE  TECI.MATNR = TEBD.MATNR
+                  AND  TEBD.CART_NO =TEBM.CART_NO
+                  AND  TECI.USE_YN = 'Y')E_KBETR
+              ,TEBM.USE_YN
+              ,(SELECT SUM(TEBD.QTY)
+                FROM   TB_ECAT_BASKET_D TEBD
+                WHERE  TEBD.CART_NO = TEBM.CART_NO) AS QTY
+              ,STUFF(( 
+                SELECT  ',' + D.MATNR
+                FROM TB_ECAT_BASKET_D D
+                WHERE TEBM.CART_NO = D.CART_NO
+                FOR XML PATH('') ),1,1,'') AS MATNR
+        FROM   TB_ECAT_BASKET_M TEBM
+        WHERE  TEBM.CART_NO IN 
+	    <foreach separator="," open="(" close=")" collection="cart_no_arr" item="cart_no" index="index">
+            #{cart_no}
+	    </foreach>
+          AND  TEBM.USE_YN = 'Y'
+        ORDER BY TEBM.CART_NO
+	</select>
+	
+	<!-- 선택 장바구니 아이템 리스트(EXCEL) -->
+	<select id="selectOrderBasketItemList" parameterType="OrderInfo" resultType="BasketInfo">
+        SELECT TEBD.CART_NO
+              ,(SELECT TEBM.CART_NM 
+                FROM   TB_ECAT_BASKET_M TEBM 
+                WHERE  TEBM.CART_NO = TEBD.CART_NO) AS CART_NM
+              ,TEBD.WERKS
+              ,TEBD.MATNR
+              ,TEBD.DESIGNATION
+              ,(SELECT CASE WHEN 'CC0076' = #{comm_cur} THEN IT.K_KBETR  
+                            WHEN 'CC0077' = #{comm_cur} THEN IT.U_KBETR 
+                            WHEN 'CC0078' = #{comm_cur} THEN IT.E_KBETR 
+                            ELSE IT.U_KBETR 
+                       END 
+                FROM   TB_ECAT_CONT_IT IT
+                WHERE  IT.MATNR = TEBD.MATNR
+           		  AND  IT.USE_YN = 'Y'
+           	   ) AS PRICE
+<!--            	  ,(SELECT CASE  -->
+<!--                            WHEN 'CC0076' = #{comm_cur}  -->
+<!--                            THEN ISNULL(SUM(TECI.K_KBETR * TEBD.QTY), 0) -->
+<!--                            WHEN 'CC0077' = #{comm_cur}  -->
+<!--                            THEN ISNULL(ROUND(SUM(CONVERT(FLOAT, TECI.U_KBETR) * TEBD.QTY), 2), 0) -->
+<!--                            ELSE ISNULL(ROUND(SUM(CONVERT(FLOAT, TECI.E_KBETR) * TEBD.QTY), 2), 0) -->
+<!--                        END -->
+<!--                 FROM   TB_ECAT_CONT_IT TECI -->
+<!--                       ,TB_ECAT_BASKET_D TEBD -->
+<!--                 WHERE  TECI.MATNR = TEBD.MATNR -->
+<!--                   AND  TEBD.CART_NO =TEBM.CART_NO -->
+<!--                   AND  TECI.USE_YN = 'Y' -->
+<!--                ) TOTAL_PRICE -->
+              ,TEBD.GRADE
+              ,(SELECT CODE.CODE_VAL 
+                FROM   TB_ECAT_CODE CODE 
+                WHERE  CODE.CODE_KEY = #{comm_cur})	AS CUR
+              ,TEBD.QTY
+              ,(SELECT CASE WHEN IES.LABST > 0 THEN 'Y' 
+                            ELSE 'N' 
+                       END 
+                FROM   IF_ECAT_STOCK IES 
+                WHERE  IES.MATNR = TEBD.MATNR 
+                  AND  WERKS = '1000'
+               ) AS STOCK_YN
+              ,TEBD.USE_YN
+              ,TEBD.FIR_ID							AS CRT_ID
+              ,TEBD.FIR_DT							AS CRT_DT
+              ,TEBD.LST_ID							AS UPD_ID
+              ,TEBD.LST_DT							AS UPD_DT
+	    FROM   TB_ECAT_BASKET_D TEBD
+	    WHERE  TEBD.CART_NO IN
+	    <foreach separator="," open="(" close=")" collection="cart_no_arr" item="cart_no" index="index">
+            #{cart_no}
+	    </foreach>
+	      AND  EXISTS( SELECT 	CART_NO
+	      			  FROM 		TB_ECAT_BASKET_M TEBM
+	      			  WHERE		TEBM.CART_NO = TEBD.CART_NO
+	      				AND		TEBM.USER_ID = #{login_user_id}
+	      		)
+	      AND	TEBD.USE_YN = 'Y'
+	    ORDER BY TEBD.CART_NO
+
+	</select>
+	
+	<!-- 선택 어셈블리 그룹 리스트 갯수 -->
+	<select id="selectOrderAssemListCnt" parameterType="OrderInfo" resultType="int">
+        SELECT COUNT(1)
+        FROM   TB_ECAT_ASSEM_M TEAM
+        WHERE  TEAM.ASSEM_NO IN
+	    <foreach separator="," open="(" close=")" collection="assem_no_arr" item="assem_no" index="index">
+            ${assem_no}
+	    </foreach>
+          AND  TEAM.USE_YN = 'Y'
+	</select>
+	
+	<!-- 선택 어셈블리 그룹 리스트  -->
+	<select id="selectOrderAssemList" parameterType="OrderInfo" resultType="BasketInfo">
+        SELECT TEAM.ASSEM_NO AS CART_NO
+              ,TEAM.USER_ID
+              ,TEAM.ASSEM_NM AS CART_NM
+              ,TEAM.ASSEM_DESC AS CART_DESC
+<!--               ,(SELECT ISNULL(SUM(TECI.K_KBETR * TEBD.QTY), 0) -->
+<!--                 FROM   TB_ECAT_CONT_IT TECI -->
+<!--                        ,TB_ECAT_BASKET_D TEBD -->
+<!--                 WHERE  TECI.MATNR = TEBD.MATNR -->
+<!--                   AND  TEBD.CART_NO =TEBM.CART_NO -->
+<!--                   AND  TECI.USE_YN = 'Y')K_KBETR -->
+              ,(SELECT ISNULL(SUM(CONVERT(INTEGER, TECI.K_KBETR)), 0)
+                FROM   TB_ECAT_CONT_IT TECI
+                       ,TB_ECAT_ASSEM_D TEAD
+                WHERE  TECI.MATNR = TEAD.MATNR
+                  AND  TEAD.ASSEM_NO =TEAM.ASSEM_NO
+                  AND  TECI.USE_YN = 'Y')K_KBETR
+                ,(SELECT ISNULL(ROUND(SUM(CONVERT(FLOAT, TECI.U_KBETR)), 2), 0)
+                  FROM   TB_ECAT_CONT_IT TECI
+                        ,TB_ECAT_ASSEM_D TEAD
+                WHERE  TECI.MATNR = TEAD.MATNR
+                  AND  TEAD.ASSEM_NO =TEAM.ASSEM_NO
+                  AND  TECI.USE_YN = 'Y')U_KBETR
+                ,(SELECT ISNULL(ROUND(SUM(CONVERT(FLOAT, TECI.E_KBETR)), 2), 0)
+                  FROM   TB_ECAT_CONT_IT TECI
+                        ,TB_ECAT_ASSEM_D TEAD
+                WHERE  TECI.MATNR = TEAD.MATNR
+                  AND  TEAD.ASSEM_NO =TEAM.ASSEM_NO
+                  AND  TECI.USE_YN = 'Y')E_KBETR
+              ,TEAM.USE_YN
+				,STUFF(( 
+				SELECT  ',' + D.MATNR
+				FROM TB_ECAT_ASSEM_D D
+				WHERE TEAM.ASSEM_NO = D.ASSEM_NO
+				FOR XML PATH('') ),1,1,'') AS MATNR
+<!--               ,(SELECT SUM(TEBD.QTY) -->
+<!--                 FROM   TB_ECAT_BASKET_D TEBD -->
+<!--                 WHERE  TEBD.CART_NO = TEBM.CART_NO) AS QTY -->
+        FROM   TB_ECAT_ASSEM_M TEAM
+        WHERE  TEAM.ASSEM_NO IN
+	    <foreach separator="," open="(" close=")" collection="assem_no_arr" item="assem_no" index="index">
+            ${assem_no}
+	    </foreach>
+          AND  TEAM.USE_YN = 'Y'
+        ORDER BY TEAM.ASSEM_NO
+	</select>
+	
+	<!-- 선택 어셈블리 그룹 아이템 리스트(EXCEL)-->
+	<select id="selectOrderAssemItemList" parameterType="OrderInfo" resultType="OrderAssemblyInfo">
+<!--         SELECT TEAD.ASSEM_NO -->
+<!--               ,(SELECT TEAM.ASSEM_NM -->
+<!--                 FROM TB_ECAT_ASSEM_M TEAM -->
+<!--                 WHERE TEAD.ASSEM_NO = TEAM.ASSEM_NO) AS ASSEM_NM -->
+<!--               ,TEAD.MATNR -->
+<!--               ,TEAD.DESIGNATION -->
+<!--               ,(SELECT CASE WHEN 'CC0076' = #{comm_cur} THEN IT.K_KBETR   -->
+<!--                             WHEN 'CC0077' = #{comm_cur} THEN IT.U_KBETR  -->
+<!--                             WHEN 'CC0078' = #{comm_cur} THEN IT.E_KBETR  -->
+<!--                             ELSE IT.U_KBETR  -->
+<!--                        END  -->
+<!--                 FROM   TB_ECAT_CONT_IT IT -->
+<!--                 WHERE  IT.MATNR = TEAD.MATNR -->
+<!--            		  AND  IT.USE_YN = 'Y' -->
+<!--            	   ) AS PRICE -->
+<!--               ,TEAD.GRADE -->
+<!--               ,1 AS QTY -->
+<!--               ,(SELECT CODE.CODE_VAL  -->
+<!--                 FROM   TB_ECAT_CODE CODE  -->
+<!--                 WHERE  CODE.CODE_KEY = #{comm_cur})	AS CUR -->
+<!--               ,(SELECT CASE WHEN IES.LABST > 0 THEN 'Y'  -->
+<!--                             ELSE 'N'  -->
+<!--                        END  -->
+<!--                 FROM   IF_ECAT_STOCK IES  -->
+<!--                 WHERE  IES.MATNR = TEAD.MATNR -->
+<!--                   AND  IES.WERKS = '1000' -->
+<!--                ) AS STOCK_YN -->
+<!--               ,TEAD.USE_YN -->
+<!--               ,TEAD.FIR_ID							AS CRT_ID -->
+<!--               ,TEAD.FIR_DT							AS CRT_DT -->
+<!--               ,TEAD.LST_ID							AS UPD_ID -->
+<!--               ,TEAD.LST_DT							AS UPD_DT -->
+<!-- 	    FROM   TB_ECAT_ASSEM_D TEAD -->
+<!--         WHERE  TEAD.ASSEM_NO IN  -->
+<!-- 	    <foreach separator="," open="(" close=")" collection="assem_no_arr" item="assem_no" index="index"> -->
+<!--             ${assem_no} -->
+<!-- 	    </foreach> -->
+<!-- 	      AND  EXISTS( SELECT ASSEM_NO -->
+<!-- 	      			   FROM   TB_ECAT_ASSEM_M TEAM -->
+<!-- 	      			   WHERE  TEAM.ASSEM_NO = TEAD.ASSEM_NO -->
+<!-- 	      				 AND  TEAM.USER_ID = #{login_user_id} -->
+<!-- 	      		) -->
+<!-- 	      AND  TEAD.USE_YN = 'Y' -->
+<!-- 	    ORDER  BY TEAD.ASSEM_NO -->
+        SELECT TEAD.ASSEM_NO
+              ,(SELECT TEAM.ASSEM_NM
+                FROM TB_ECAT_ASSEM_M TEAM
+                WHERE TEAD.ASSEM_NO = TEAM.ASSEM_NO) AS ASSEM_NM
+              ,TEAD.MATNR
+              ,TEAD.DESIGNATION
+              ,(SELECT CASE WHEN 'CC0076' = #{comm_cur} THEN IT.K_KBETR  
+                            WHEN 'CC0077' = #{comm_cur} THEN IT.U_KBETR 
+                            WHEN 'CC0078' = #{comm_cur} THEN IT.E_KBETR 
+                            ELSE IT.U_KBETR 
+                       END 
+                FROM   TB_ECAT_CONT_IT IT
+                WHERE  IT.MATNR = TEAD.MATNR
+           		  AND  IT.USE_YN = 'Y'
+           	   ) AS PRICE
+              ,TEAD.GRADE
+              ,CASE WHEN (SELECT COUNT(1) 
+                          FROM   TB_ECAT_ASSEM_LOC T 
+                          WHERE  T.MATNR = TEAD.MATNR 
+                          AND    T.ASSEM_NO = TEAD.ASSEM_NO) > 0 
+                         THEN (SELECT COUNT(1) 
+                               FROM   TB_ECAT_ASSEM_LOC T 
+                               WHERE  T.MATNR = TEAD.MATNR
+                               AND    T.ASSEM_NO = TEAD.ASSEM_NO) 
+                    ELSE '1'
+               END AS QTY
+              ,(SELECT CODE.CODE_VAL 
+                FROM   TB_ECAT_CODE CODE 
+                WHERE  CODE.CODE_KEY = #{comm_cur})	AS CUR
+              ,(SELECT CASE WHEN IES.LABST > 0 THEN 'Y' 
+                            ELSE 'N' 
+                       END 
+                FROM   IF_ECAT_STOCK IES 
+                WHERE  IES.MATNR = TEAD.MATNR
+                  AND  IES.WERKS = '1000'
+               ) AS STOCK_YN
+	    FROM   TB_ECAT_ASSEM_D TEAD
+	    LEFT   OUTER JOIN TB_ECAT_ASSEM_LOC TEAL ON TEAD.MATNR = TEAL.MATNR
+        WHERE  TEAD.ASSEM_NO IN 
+	    <foreach separator="," open="(" close=")" collection="assem_no_arr" item="assem_no" index="index">
+            ${assem_no}
+	    </foreach>
+	      AND  EXISTS( SELECT ASSEM_NO
+	      			   FROM   TB_ECAT_ASSEM_M TEAM
+	      			   WHERE  TEAM.ASSEM_NO = TEAD.ASSEM_NO
+	      				 AND  TEAM.USER_ID = #{login_user_id}
+	      		)
+	      AND  TEAD.USE_YN = 'Y'
+	    GROUP  BY TEAD.ASSEM_NO, TEAD.MATNR, TEAD.DESIGNATION, TEAD.GRADE
+	    ORDER  BY TEAD.ASSEM_NO
+	</select>
+	
+	<!-- 메일 제목에 표시할 장바구니 명 -->
+	<select id="selectOrderInsertBasketInfo" parameterType="OrderInfo" resultType="BasketInfo">
+		SELECT CART_NM
+		FROM   TB_ECAT_BASKET_M
+		WHERE  CART_NO = #{cart_no}
+	</select>
+	
+	<!-- 메일 제목에 표시할 어셈블리 명 -->
+	<select id="selectOrderInsertAssemblyInfo" parameterType="OrderInfo" resultType="AssemblyInfo">
+		SELECT ASSEM_NM
+		FROM   TB_ECAT_ASSEM_M
+		WHERE  ASSEM_NO = #{assem_no}
+	</select>
+	
+	<!-- 견적요청서 등록 -->
+	<insert id="insertOrder" parameterType="OrderInfo">
+	    INSERT INTO TB_ECAT_BASKET_O (
+        	USER_ID
+           ,CART_NO
+           ,SUR_NAME 
+           ,NAME 
+           ,EMAIL 
+           ,COMPANY 
+           ,CEMAIL
+           ,USER_NATION 
+           ,BIGO
+           ,FIR_ID
+           ,FIR_DT
+           ,LST_ID
+           ,LST_DT 
+        ) VALUES (
+            #{login_user_id}
+           ,#{cart_no}
+           ,#{sur_name}
+           ,#{name}
+           ,#{email}
+           ,#{company}
+           ,#{cemail}
+           ,#{user_nation}
+           ,#{bigo}
+           ,#{login_user_id}
+           ,getDate()
+           ,#{login_user_id}
+           ,getDate()
+        )
+	</insert>
+	
+	<!-- 메일 수신자 참조자 -->
+	<select id="selectOrderMailReceiver" parameterType="OrderInfo" resultType="OrderInfo">
+        SELECT EMAIL_TO
+              ,EMAIL_CC1
+              ,EMAIL_CC2
+        FROM   TB_ECAT_NATION
+        WHERE  NATION_CD = #{user_nation}
+	</select>
+
+</mapper>

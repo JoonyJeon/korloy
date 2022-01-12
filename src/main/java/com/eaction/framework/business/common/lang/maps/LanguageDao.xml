@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.eaction.framework.business.common.lang.dao.LanguageDao">
+
+	<select id="getLangMInfo" resultType="LanguageInfo">	        
+	    SELECT * FROM TB_ECAT_LANG_TRAN_M
+	    WHERE	USE_YN = 'Y'
+	</select>
+
+	<select id="getLangDInfo" resultType="LanguageInfo">	        
+	    SELECT * FROM TB_ECAT_LANG_TRAN_D
+	    WHERE	USE_YN = 'Y'
+	</select>
+	
+<!-- 	<select id="getLangDisplayInfo" resultType="LanguageInfo">	        
+	    SELECT * FROM TB_ECAT_LANG_DISPLAY
+	    WHERE	USE_YN = 'Y'
+	</select>
+	 -->
+	<select id="getLangCode" resultType="CodeInfo">	        
+	    SELECT	LANG_CD AS CODE,
+	    			LANG_KR_NM AS NAME,
+	    			LANG_KR_NM AS CODENM_K,
+	    			LANG_EN_NM AS CODENM_E	    			
+	    FROM		TB_ECAT_LANG
+	    WHERE	USE_YN = 'Y'
+	    ORDER BY LANG_IDX
+	</select>
+	
+</mapper>
+
+

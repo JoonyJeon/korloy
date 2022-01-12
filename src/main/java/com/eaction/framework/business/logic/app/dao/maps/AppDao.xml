@@ -1,0 +1,1258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- DAO 구현체 자동생성을 위한 DAO 인터페이스 정의 -->
+<mapper namespace="com.eaction.framework.business.logic.app.dao.AppDao">
+
+
+    <!-- Item 전체개수 조회 -->
+    <select id="selectItemTotalCnt" resultType="int" parameterType="AppInfo">
+		SELECT COUNT(1)
+		FROM(
+		    SELECT T.MATNR
+			FROM TB_ECAT_CONT_IT T
+			WHERE T.USE_YN = 'Y'
+			AND T.ESC_GB = 'Y'
+            <choose>
+               	<when test='inch_use_yn == "N"'>
+               		AND T.UNIT_CD != 'CC0002'
+               	</when>
+               	<otherwise>
+               		<if test='unit_cd == "CC0001"'>
+               		AND T.UNIT_CD != 'CC0002'
+               		</if>
+               		<if test='unit_cd == "CC0002"'>
+               		AND T.UNIT_CD != 'CC0001'
+               		</if>
+               	</otherwise>
+             </choose>
+			GROUP BY T.MATNR
+		) A
+    </select>
+    	
+	<!-- Main Application 목록 조회 -->
+	<select id="selectMainApplicationList" resultType="AppInfo" parameterType="AppInfo">
+		SELECT	MAIN.MA_CD,
+					MAIN.MA_NM,
+                    (
+                        SELECT CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_THN_NM)
+                        FROM  TB_ECAT_CONT_F IMG WITH(NOLOCK)
+                        WHERE MAIN.MA_CD = IMG.FILE_CD
+                        AND IMG.FILE_TYP = 'CC0004'
+                    ) AS MAIN_IMG,
+					(
+				        SELECT COUNT(1)
+				        FROM(
+				                SELECT  IT.MATNR
+				                FROM    TB_ECAT_CONT_IT IT
+				                JOIN      TB_ECAT_CONT_IG_HIER IG_HIER ON(IT.IG_CD = IG_HIER.IG_CD AND IG_HIER.USE_YN = 'Y')
+				                JOIN      TB_ECAT_CONT_SA_HIER SA_HIER ON(IG_HIER.SA_CD = SA_HIER.SA_CD AND SA_HIER.USE_YN = 'Y')
+				                WHERE   IT.USE_YN = 'Y'
+				                AND IT.ESC_GB = 'Y'
+				                AND      SA_HIER.MA_CD = MAIN.MA_CD
+				                <choose>
+				                	<when test='inch_use_yn == "N"'>
+				                		AND IT.UNIT_CD != 'CC0002'
+				                	</when>
+				                	<otherwise>
+				                		<if test='unit_cd == "CC0001"'>
+				                		AND IT.UNIT_CD != 'CC0002'
+				                		</if>
+				                		<if test='unit_cd == "CC0002"'>
+				                		AND IT.UNIT_CD != 'CC0001'
+				                		</if>
+				                	</otherwise>
+				                </choose>
+				        ) SUB
+					) AS SUB_CNT
+		FROM		TB_ECAT_CONT_MA MAIN  WITH(NOLOCK)
+		WHERE	MAIN.USE_YN = 'Y'
+		ORDER BY MAIN.SEQ
+	</select>
+
+    <!-- 테일러드 아이템 조회 -->
+    <select id="selectTailInfo" resultType="AppInfo" parameterType="AppInfo">
+        SELECT  TAIL.LANG_CD,
+                   CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) AS TAIL_FILE
+        FROM   TB_ECAT_CONT_TAIL TAIL
+        JOIN    TB_ECAT_CONT_F F ON(TAIL.TI_CD = F.FILE_CD)
+        WHERE  TAIL.MA_CD = #{ma_cd}
+        AND     F.FILE_TYP = 'CC0207'
+    </select>
+    
+    <!-- Sub Application 목록 개수 조회 -->
+    <select id="selectSubApplicationListCnt" resultType="int" parameterType="AppInfo">
+        SELECT  COUNT(1)
+        FROM   TB_ECAT_CONT_SA_HIER SA_HIER WITH(NOLOCK)
+        JOIN     TB_ECAT_CONT_SA SUB WITH(NOLOCK) ON(SUB.SA_CD = SA_HIER.SA_CD)
+        WHERE   SUB.USE_YN = 'Y'
+        AND     SA_HIER.USE_YN = 'Y'
+        AND
+        (
+            SELECT COUNT(1)
+            FROM(
+                    SELECT  IT.MATNR
+                    FROM    TB_ECAT_CONT_IT IT
+                    JOIN      TB_ECAT_CONT_IG_HIER IG ON(IT.IG_CD = IG.IG_CD AND IG.USE_YN = 'Y')
+                    WHERE   IT.USE_YN = 'Y'
+                    AND IT.ESC_GB = 'Y'
+                    AND      IG.SA_CD = SA_HIER.SA_CD
+                    <choose>
+	                	<when test='inch_use_yn == "N"'>
+	                		AND IT.UNIT_CD != 'CC0002'
+	                	</when>
+	                	<otherwise>
+	                		<if test='unit_cd == "CC0001"'>
+	                		AND IT.UNIT_CD != 'CC0002'
+	                		</if>
+	                		<if test='unit_cd == "CC0002"'>
+	                		AND IT.UNIT_CD != 'CC0001'
+	                		</if>
+	                	</otherwise>
+	                </choose>
+            ) SUB
+        )<![CDATA[>]]> 0
+        <if test='ma_cd != null and ma_cd != ""'>
+        AND     SA_HIER.MA_CD = #{ma_cd}
+        </if>
+    </select>
+    	
+	<!-- Sub Application 목록 조회 -->
+	<select id="selectSubApplicationList" resultType="AppInfo" parameterType="AppInfo">
+        SELECT A.*
+        FROM
+        (
+	        SELECT  ROW_NUMBER() OVER(ORDER BY ${orderSort}) AS RN,
+	                   SA_HIER.MA_CD,
+	                    SUB_APP.SA_CD,
+	                    SUB_APP.SA_NM,
+	                    (
+		                    SELECT CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_THN_NM)
+		                    FROM  TB_ECAT_CONT_F IMG WITH(NOLOCK)
+		                    WHERE SUB_APP.SA_CD = IMG.FILE_CD
+		                    AND IMG.FILE_TYP = 'CC0005'
+	                    ) AS MAIN_IMG,
+	                    (
+	                        SELECT COUNT(1)
+	                        FROM(
+	                                SELECT  IT.MATNR
+	                                FROM    TB_ECAT_CONT_IT IT
+	                                JOIN      TB_ECAT_CONT_IG_HIER IG ON(IT.IG_CD = IG.IG_CD AND IG.USE_YN = 'Y')
+	                                WHERE   IT.USE_YN = 'Y'
+	                                AND IT.ESC_GB = 'Y'
+	                                AND      IG.SA_CD = SA_HIER.SA_CD
+	                                <choose>
+						               	<when test='inch_use_yn == "N"'>
+						               		AND IT.UNIT_CD != 'CC0002'
+						               	</when>
+						               	<otherwise>
+						               		<if test='unit_cd == "CC0001"'>
+						               		AND IT.UNIT_CD != 'CC0002'
+						               		</if>
+						               		<if test='unit_cd == "CC0002"'>
+						               		AND IT.UNIT_CD != 'CC0001'
+						               		</if>
+						               	</otherwise>
+						             </choose>
+	                        ) SUB
+	                    ) AS SUB_CNT
+	        FROM   TB_ECAT_CONT_SA_HIER SA_HIER WITH(NOLOCK) 
+	        JOIN     TB_ECAT_CONT_SA SUB_APP WITH(NOLOCK) ON(SUB_APP.SA_CD = SA_HIER.SA_CD)
+	        WHERE   SUB_APP.USE_YN = 'Y'
+	        AND SA_HIER.USE_YN = 'Y'
+	        AND
+	        (
+	            SELECT COUNT(1)
+	            FROM(
+	                    SELECT  IT.MATNR
+	                    FROM    TB_ECAT_CONT_IT IT
+	                    JOIN      TB_ECAT_CONT_IG_HIER IG ON(IT.IG_CD = IG.IG_CD AND IG.USE_YN = 'Y')
+	                    WHERE   IT.USE_YN = 'Y'
+	                    AND IT.ESC_GB = 'Y'
+	                    AND      IG.SA_CD = SA_HIER.SA_CD
+	                    <choose>
+			               	<when test='inch_use_yn == "N"'>
+			               		AND IT.UNIT_CD != 'CC0002'
+			               	</when>
+			               	<otherwise>
+			               		<if test='unit_cd == "CC0001"'>
+			               		AND IT.UNIT_CD != 'CC0002'
+			               		</if>
+			               		<if test='unit_cd == "CC0002"'>
+			               		AND IT.UNIT_CD != 'CC0001'
+			               		</if>
+			               	</otherwise>
+			             </choose>
+	            ) SUB
+	        )<![CDATA[>]]> 0
+			<if test='ma_cd != null and ma_cd != ""'>
+			AND		SA_HIER.MA_CD = #{ma_cd}
+			</if>
+        ) A
+        ORDER BY RN 
+        <if test='isPageYn != "" and isPageYn == "Y"'>
+        OFFSET ${startIndex} * ${pageCount} ROWS
+        FETCH NEXT ${pageCount} ROWS ONLY
+        </if>
+	</select>
+    
+    <!-- Item Group 목록 개수 조회 -->
+    <select id="selectItemGroupListCnt" resultType="int" parameterType="AppInfo">
+        SELECT  COUNT(1)
+        FROM
+        (
+			<if test="ar_sa_cd != null and ar_sa_cd.length != 0">
+                <foreach item="sa_cd" index="index" collection="ar_sa_cd" open="" separator="INTERSECT" close="">
+		        SELECT IG_APP.IG_CD
+		        FROM  TB_ECAT_CONT_IG IG_APP WITH(NOLOCK)
+		        JOIN     TB_ECAT_CONT_IG_HIER IG_HIER ON(IG_APP.IG_CD = IG_HIER.IG_CD)
+		        JOIN     TB_ECAT_CONT_SA SA ON(IG_HIER.SA_CD = SA.SA_CD)
+		                    <if test='filter_sch_sql != null and filter_sch_sql != ""'>
+		                    JOIN
+		                    (
+		                        SELECT  IG_CD
+		                        FROM   TB_ECAT_CONT_IT IT WITH(NOLOCK)
+		                        WHERE   IT.USE_YN = 'Y'
+		                        AND IT.ESC_GB = 'Y'
+		                        <choose>
+				                	<when test='inch_use_yn == "N"'>
+				                		AND IT.UNIT_CD != 'CC0002'
+				                	</when>
+				                	<otherwise>
+				                		<if test='unit_cd == "CC0001"'>
+				                		AND IT.UNIT_CD != 'CC0002'
+				                		</if>
+				                		<if test='unit_cd == "CC0002"'>
+				                		AND IT.UNIT_CD != 'CC0001'
+				                		</if>
+				                	</otherwise>
+				                </choose>
+		                        <!-- filter_sch_sql 은 이렇게 만들어준다
+		                        AND   IT_PROP.SYMBOL = 'CNSC'
+		                        AND   IT_PROP.VAL = '0'
+		                         -->
+		                        AND EXISTS 
+						        (
+						            SELECT 1
+						            FROM TB_ECAT_CONT_IT_PROP IT_PROP
+						            WHERE IT.MATNR = IT_PROP.MATNR
+		                            ${filter_sch_sql}
+		                        )
+		                        GROUP BY IT.IG_CD
+		                    ) IG_IT ON(IG_APP.IG_CD = IG_IT.IG_CD)
+		                    </if>
+		        WHERE   IG_APP.USE_YN = 'Y'
+		        AND IG_HIER.USE_YN = 'Y'
+		        AND SA.USE_YN = 'Y'
+		        AND SA.SA_CD = #{sa_cd}
+	            AND
+	            (    
+		            SELECT COUNT(1)
+		            FROM(
+		                    SELECT  DISTINCT IT.MATNR
+		                    FROM    TB_ECAT_CONT_IT IT
+		                    WHERE   IT.USE_YN = 'Y'
+		                    AND IT.ESC_GB = 'Y'
+		                    AND IT.IG_CD = IG_APP.IG_CD
+		                    <choose>
+			                	<when test='inch_use_yn == "N"'>
+			                		AND IT.UNIT_CD != 'CC0002'
+			                	</when>
+			                	<otherwise>
+			                		<if test='unit_cd == "CC0001"'>
+			                		AND IT.UNIT_CD != 'CC0002'
+			                		</if>
+			                		<if test='unit_cd == "CC0002"'>
+			                		AND IT.UNIT_CD != 'CC0001'
+			                		</if>
+			                	</otherwise>
+			                </choose>
+		            )IT_CNT
+	            )<![CDATA[>]]> 0
+		        <if test='ma_cd != null and ma_cd != ""'>
+		        AND EXISTS
+		        (
+		            SELECT 1
+		            FROM TB_ECAT_CONT_SA_HIER SA_HIER
+		            WHERE IG_APP.IG_CD = IG_HIER.IG_CD
+		            AND SA_HIER.MA_CD = #{ma_cd}
+		            AND SA_HIER.USE_YN = 'Y'
+		        )
+		        </if>
+		        <if test="ig_cd_arr != null and ig_cd_arr.length != 0">
+		        AND IG_APP.IG_CD IN
+		             <foreach separator="," open="(" close=")" collection="ig_cd_arr" item="ig_cd" index="index">
+		                #{ig_cd}
+		            </foreach>
+		        </if>
+		        GROUP BY IG_APP.IG_CD
+    		</foreach>
+		</if>
+		<if test="ar_sa_cd == null or ar_sa_cd.length == 0">
+                SELECT IG_APP.IG_CD
+                FROM  TB_ECAT_CONT_IG IG_APP WITH(NOLOCK)
+                JOIN     TB_ECAT_CONT_IG_HIER IG_HIER ON(IG_APP.IG_CD = IG_HIER.IG_CD)
+               <if test='filter_sch_sql != null and filter_sch_sql != ""'>
+               JOIN
+               (
+                   SELECT  IG_CD
+                   FROM   TB_ECAT_CONT_IT IT WITH(NOLOCK)
+                   WHERE   IT.USE_YN = 'Y'
+                   AND IT.ESC_GB = 'Y'
+                   <choose>
+						<when test='inch_use_yn == "N"'>
+							AND IT.UNIT_CD != 'CC0002'
+						</when>
+						<otherwise>
+							<if test='unit_cd == "CC0001"'>
+							AND IT.UNIT_CD != 'CC0002'
+							</if>
+							<if test='unit_cd == "CC0002"'>
+							AND IT.UNIT_CD != 'CC0001'
+							</if>
+						</otherwise>
+					</choose>
+                   <!-- filter_sch_sql 은 이렇게 만들어준다
+                   AND   IT_PROP.SYMBOL = 'CNSC'
+                   AND   IT_PROP.VAL = '0'
+                    -->
+                   AND EXISTS 
+                   (
+                       SELECT 1
+                       FROM TB_ECAT_CONT_IT_PROP IT_PROP
+                       WHERE IT.MATNR = IT_PROP.MATNR
+                       ${filter_sch_sql}
+                   )
+                   GROUP BY IT.IG_CD
+               ) IG_IT ON(IG_APP.IG_CD = IG_IT.IG_CD)
+               </if>
+                WHERE   IG_APP.USE_YN = 'Y'
+                AND IG_HIER.USE_YN = 'Y'
+                AND
+                (    
+                    SELECT COUNT(1)
+                    FROM(
+                            SELECT  DISTINCT IT.MATNR
+                            FROM    TB_ECAT_CONT_IT IT
+                            WHERE   IT.USE_YN = 'Y'
+                            AND IT.ESC_GB = 'Y'
+                            AND IT.IG_CD = IG_APP.IG_CD
+                            <choose>
+								<when test='inch_use_yn == "N"'>
+									AND IT.UNIT_CD != 'CC0002'
+								</when>
+								<otherwise>
+									<if test='unit_cd == "CC0001"'>
+									AND IT.UNIT_CD != 'CC0002'
+									</if>
+									<if test='unit_cd == "CC0002"'>
+									AND IT.UNIT_CD != 'CC0001'
+									</if>
+								</otherwise>
+							</choose>
+                    )IT_CNT
+                )<![CDATA[>]]> 0
+                <if test="ig_cd_arr != null and ig_cd_arr.length != 0">
+                AND IG_APP.IG_CD IN
+                     <foreach separator="," open="(" close=")" collection="ig_cd_arr" item="ig_cd" index="index">
+                        #{ig_cd}
+                    </foreach>
+                </if>
+                GROUP BY IG_APP.IG_CD
+		</if>
+        )A
+    </select>
+    
+    <!-- IG_CD 로 SA_CD 조회-->
+    <select id="selectIgCodeToSaCode" resultType="String" parameterType="AppInfo">
+		SELECT TOP(1) T.SA_CD FROM TB_ECAT_CONT_IG_HIER T
+		WHERE T.IG_CD = #{ig_cd}
+		AND T.USE_YN = 'Y'
+    </select>
+    
+    <!-- SA_CD 로 MA_CD 조회-->
+    <select id="selectSaCodeToMaCode" resultType="String" parameterType="AppInfo">
+        SELECT TOP(1) T.MA_CD FROM TB_ECAT_CONT_SA_HIER T
+        WHERE T.SA_CD = #{sa_cd}
+        AND T.USE_YN = 'Y'
+    </select>
+    
+    <!-- Item Group 목록 개수 조회 -->
+    <select id="selectSubApplicationOfItemCnt" resultType="int" parameterType="AppInfo">
+        SELECT  COUNT(1)
+        FROM
+        (
+	        SELECT  DISTINCT IT.MATNR
+	        FROM   TB_ECAT_CONT_IT IT WITH(NOLOCK)
+	        WHERE   IT.USE_YN = 'Y'
+	        AND IT.ESC_GB = 'Y'
+            <choose>
+				<when test='inch_use_yn == "N"'>
+					AND IT.UNIT_CD != 'CC0002'
+				</when>
+				<otherwise>
+					<if test='unit_cd == "CC0001"'>
+					AND IT.UNIT_CD != 'CC0002'
+					</if>
+					<if test='unit_cd == "CC0002"'>
+					AND IT.UNIT_CD != 'CC0001'
+					</if>
+				</otherwise>
+			</choose>
+	        <!-- filter_sch_sql 은 이렇게 만들어준다
+	        AND   IT_PROP.SYMBOL = 'CNSC'
+	        AND   IT_PROP.VAL = '0'
+	         -->
+	        <if test='filter_sch_sql != null and filter_sch_sql != ""'>
+	        AND EXISTS 
+	        (
+	            SELECT 1
+	            FROM TB_ECAT_CONT_IT_PROP IT_PROP
+	            WHERE IT.MATNR = IT_PROP.MATNR
+	            ${filter_sch_sql}
+	        )
+	        </if>
+	        <if test='sa_multi_sql != null and sa_multi_sql != ""'>
+	        ${sa_multi_sql}
+	        </if>
+	        <if test="ig_cd_arr != null and ig_cd_arr.length != 0">
+	        AND IT.IG_CD IN
+	             <foreach item="ig_cd" index="index" collection="ig_cd_arr" open="(" separator="," close=")">
+	                #{ig_cd}
+	            </foreach>
+	        </if>
+        ) A
+    </select>
+    
+    <!-- Item Group 목록 조회 -->
+	<select id="selectItemGroupList" resultType="AppInfo" parameterType="AppInfo">
+        SELECT A.*
+        FROM
+        (
+        SELECT  ROW_NUMBER() OVER(ORDER BY ${orderSort}) AS RN,
+                    TB.IG_CD,
+                    TB.IG_NM,
+					(
+					SELECT CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_THN_NM)
+					FROM  TB_ECAT_CONT_F IMG WITH(NOLOCK)
+					WHERE TB.IG_CD = IMG.FILE_CD
+					AND IMG.FILE_TYP = 'CC0017'
+					) AS ITEM_IMAGE_THUMB,
+					CASE
+	                WHEN
+	                (   
+	                    CONVERT(DATETIME, TB.NEW_FR_DT) <![CDATA[<=]]> GETDATE()
+	                    AND
+	                    GETDATE() <![CDATA[<=]]> CONVERT(DATETIME, CONCAT(TB.NEW_TO_DT, ' 23:59:59'), 120)
+	                    AND
+	                    TB.NEW_FR_DT IS NOT NULL AND LEN(TRIM(TB.NEW_FR_DT)) <![CDATA[>]]> 0
+	                    AND
+	                    TB.NEW_TO_DT IS NOT NULL AND LEN(TRIM(TB.NEW_TO_DT)) <![CDATA[>]]> 0
+	                )THEN 'Y'
+	                ELSE 'N'
+	                END AS NEW_YN,
+                    (
+                        SELECT COUNT(1)
+                        FROM(
+                                SELECT  DISTINCT IT.MATNR
+                                FROM    TB_ECAT_CONT_IT IT
+                                WHERE   IT.USE_YN = 'Y'
+                                AND IT.ESC_GB = 'Y'
+                                AND IT.IG_CD = TB.IG_CD
+                                <choose>
+					               	<when test='inch_use_yn == "N"'>
+					               		AND IT.UNIT_CD != 'CC0002'
+					               	</when>
+					               	<otherwise>
+					               		<if test='unit_cd == "CC0001"'>
+					               		AND IT.UNIT_CD != 'CC0002'
+					               		</if>
+					               		<if test='unit_cd == "CC0002"'>
+					               		AND IT.UNIT_CD != 'CC0001'
+					               		</if>
+					               	</otherwise>
+					            </choose>
+                        ) SUB
+                    ) AS SUB_CNT,
+                    TB.IG_DSCR
+            FROM
+            (
+	            SELECT TB_A.IG_CD,
+                          TB_A.IG_NM,
+                          TB_A.NEW_FR_DT,
+                          TB_A.NEW_TO_DT,
+                          TB_A.IG_DSCR,
+                          MIN(IG_HIER2.SEQ) AS SEQ
+	            FROM
+                (
+	            <if test="ar_sa_cd != null and ar_sa_cd.length != 0">
+	                 <foreach item="sa_cd" index="index" collection="ar_sa_cd" open="" separator="INTERSECT" close="">
+			            SELECT      IG_APP.IG_CD,
+			                           IG_APP.IG_NM,
+			                           IG_APP.NEW_FR_DT,
+			                           IG_APP.NEW_TO_DT,
+			                           IG_APP.IG_DSCR
+				        FROM    TB_ECAT_CONT_IG IG_APP WITH(NOLOCK)
+			            JOIN     TB_ECAT_CONT_IG_HIER IG_HIER ON(IG_APP.IG_CD = IG_HIER.IG_CD)
+			            JOIN      TB_ECAT_CONT_SA SA ON(IG_HIER.SA_CD = SA.SA_CD)
+				                    <if test='filter_sch_sql != null and filter_sch_sql != ""'>
+				                    JOIN 
+				                    (
+				                        SELECT  IG_CD
+				                        FROM   TB_ECAT_CONT_IT IT WITH(NOLOCK)
+				                        WHERE   IT.USE_YN = 'Y'
+				                        AND IT.ESC_GB = 'Y'
+				                        <choose>
+							               	<when test='inch_use_yn == "N"'>
+							               		AND IT.UNIT_CD != 'CC0002'
+							               	</when>
+							               	<otherwise>
+							               		<if test='unit_cd == "CC0001"'>
+							               		AND IT.UNIT_CD != 'CC0002'
+							               		</if>
+							               		<if test='unit_cd == "CC0002"'>
+							               		AND IT.UNIT_CD != 'CC0001'
+							               		</if>
+							               	</otherwise>
+							            </choose>
+				                        <!-- filter_sch_sql 은 이렇게 만들어준다
+				                        AND   IT_PROP.SYMBOL = 'CNSC'
+				                        AND   IT_PROP.VAL = '0'
+				                         -->
+				                        AND EXISTS 
+				                        (
+				                            SELECT 1
+				                            FROM TB_ECAT_CONT_IT_PROP IT_PROP
+				                            WHERE IT.MATNR = IT_PROP.MATNR
+				                            ${filter_sch_sql}
+				                        )
+				                        GROUP BY IT.IG_CD
+				                    ) IG_IT ON(IG_APP.IG_CD = IG_IT.IG_CD)
+				                   </if>
+				        WHERE   IG_APP.USE_YN = 'Y'
+				        AND  IG_HIER.USE_YN = 'Y'
+				        AND  SA.USE_YN = 'Y'
+				        AND SA.SA_CD = #{sa_cd}
+			            AND
+			            (    
+			                SELECT COUNT(1)
+			                FROM(
+			                        SELECT  DISTINCT IT.MATNR
+			                        FROM    TB_ECAT_CONT_IT IT
+			                        WHERE   IT.USE_YN = 'Y'
+			                        AND IT.ESC_GB = 'Y'
+			                        AND IT.IG_CD = IG_APP.IG_CD
+			                        <choose>
+						               	<when test='inch_use_yn == "N"'>
+						               		AND IT.UNIT_CD != 'CC0002'
+						               	</when>
+						               	<otherwise>
+						               		<if test='unit_cd == "CC0001"'>
+						               		AND IT.UNIT_CD != 'CC0002'
+						               		</if>
+						               		<if test='unit_cd == "CC0002"'>
+						               		AND IT.UNIT_CD != 'CC0001'
+						               		</if>
+						               	</otherwise>
+						            </choose>
+			                )IT_CNT
+			            )<![CDATA[>]]> 0
+				        <if test='ma_cd != null and ma_cd != ""'>
+				        AND EXISTS
+				        (
+				            SELECT 1
+				            FROM TB_ECAT_CONT_SA_HIER SA_HIER
+				            WHERE IG_APP.IG_CD = IG_HIER.IG_CD
+				            AND SA_HIER.MA_CD = #{ma_cd}
+				            AND SA_HIER.USE_YN = 'Y'
+				        )
+				        </if>
+				        <if test="ig_cd_arr != null and ig_cd_arr.length != 0">
+				        AND IG_APP.IG_CD IN
+						     <foreach item="ig_cd" index="index" collection="ig_cd_arr" open="(" separator="," close=")">
+					            #{ig_cd}
+						    </foreach>
+				        </if>
+		           </foreach>
+		        </if>
+		        <if test="ar_sa_cd == null or ar_sa_cd.length == 0">
+                SELECT      IG_APP.IG_CD,
+                                IG_APP.IG_NM,
+                                IG_APP.NEW_FR_DT,
+                                IG_APP.NEW_TO_DT,
+                                IG_APP.IG_DSCR
+                 FROM    TB_ECAT_CONT_IG IG_APP WITH(NOLOCK)
+                 JOIN     TB_ECAT_CONT_IG_HIER IG_HIER ON(IG_APP.IG_CD = IG_HIER.IG_CD)
+                             <if test='filter_sch_sql != null and filter_sch_sql != ""'>
+                             JOIN 
+                             (
+                                 SELECT  IG_CD
+                                 FROM   TB_ECAT_CONT_IT IT WITH(NOLOCK)
+                                 WHERE   IT.USE_YN = 'Y'
+                                 AND IT.ESC_GB = 'Y'
+                                 <choose>
+					               	<when test='inch_use_yn == "N"'>
+					               		AND IT.UNIT_CD != 'CC0002'
+					               	</when>
+					               	<otherwise>
+					               		<if test='unit_cd == "CC0001"'>
+					               		AND IT.UNIT_CD != 'CC0002'
+					               		</if>
+					               		<if test='unit_cd == "CC0002"'>
+					               		AND IT.UNIT_CD != 'CC0001'
+					               		</if>
+					               	</otherwise>
+					            </choose>
+                                 <!-- filter_sch_sql 은 이렇게 만들어준다
+                                 AND   IT_PROP.SYMBOL = 'CNSC'
+                                 AND   IT_PROP.VAL = '0'
+                                  -->
+                                 AND EXISTS 
+                                 (
+                                     SELECT 1
+                                     FROM TB_ECAT_CONT_IT_PROP IT_PROP
+                                     WHERE IT.MATNR = IT_PROP.MATNR
+                                     ${filter_sch_sql}
+                                 )
+                                 GROUP BY IT.IG_CD
+                             ) IG_IT ON(IG_APP.IG_CD = IG_IT.IG_CD)
+                            </if>
+                 WHERE   IG_APP.USE_YN = 'Y'
+                 AND  IG_HIER.USE_YN = 'Y'
+                 AND
+                 (    
+                     SELECT COUNT(1)
+                     FROM(
+                             SELECT  DISTINCT IT.MATNR
+                             FROM    TB_ECAT_CONT_IT IT
+                             WHERE   IT.USE_YN = 'Y'
+                             AND IT.ESC_GB = 'Y'
+                             AND IT.IG_CD = IG_APP.IG_CD
+                             <choose>
+				               	<when test='inch_use_yn == "N"'>
+				               		AND IT.UNIT_CD != 'CC0002'
+				               	</when>
+				               	<otherwise>
+				               		<if test='unit_cd == "CC0001"'>
+				               		AND IT.UNIT_CD != 'CC0002'
+				               		</if>
+				               		<if test='unit_cd == "CC0002"'>
+				               		AND IT.UNIT_CD != 'CC0001'
+				               		</if>
+				               	</otherwise>
+				            </choose>
+                     )IT_CNT
+                 )<![CDATA[>]]> 0
+                 <if test="ig_cd_arr != null and ig_cd_arr.length != 0">
+                 AND IG_APP.IG_CD IN
+                      <foreach item="ig_cd" index="index" collection="ig_cd_arr" open="(" separator="," close=")">
+                         #{ig_cd}
+                     </foreach>
+                 </if>
+		        </if>
+	           ) TB_A
+	           JOIN     TB_ECAT_CONT_IG_HIER IG_HIER2 ON(TB_A.IG_CD = IG_HIER2.IG_CD)
+	           WHERE 1=1
+				<if test="ar_sa_cd != null and ar_sa_cd.length != 0">
+				AND IG_HIER2.SA_CD IN
+				     <foreach item="sa_cd" index="index" collection="ar_sa_cd" open="(" separator="," close=")">
+				        #{sa_cd}
+				    </foreach>
+				</if>	           
+	           GROUP BY TB_A.IG_CD,
+                          TB_A.IG_NM,
+                          TB_A.NEW_FR_DT,
+                          TB_A.NEW_TO_DT,
+                          TB_A.IG_DSCR
+	        )TB
+		) A
+        ORDER BY RN 
+        <if test='isPageYn != "" and isPageYn == "Y"'>
+        OFFSET ${startIndex} * ${pageCount} ROWS
+        FETCH NEXT ${pageCount} ROWS ONLY
+        </if>
+	</select>
+    <!-- Item Group List 필터 항목 조회 -->
+    <select id="selectItemGroupFilterList" resultType="AppInfo" parameterType="AppSearchInfo">
+        SELECT
+            DISTINCT TRIM(T2.PROP_ISO) AS PROP_ISO
+            ,T2.SCH_TYP
+            ,T2.SQNO
+        FROM (
+            SELECT * FROM TB_ECAT_CONT_IG_HIER IG_HIER
+                WHERE 1=1
+                <if test='ig_cd_arr != null and ig_cd_arr != ""'>
+                AND IG_HIER.IG_CD IN
+                     <foreach separator="," open="(" close=")" collection="ig_cd_arr" item="ig_cd" index="index">
+                        #{ig_cd}
+                    </foreach>
+                </if>
+                <if test='search_ig_cd != null and search_ig_cd !=""'>
+                AND IG_CD = #{search_ig_cd}
+                </if>
+                <if test='search_ar_sa_cd != null and search_ar_sa_cd.length !=0'>
+                       AND IG_HIER.SA_CD IN 
+                       <foreach collection="search_ar_sa_cd" item="state" index="index" separator="," open="(" close=")">
+                           #{state}
+                       </foreach>
+                </if>               
+                AND USE_YN = 'Y'
+            ) T1 
+            JOIN (
+                    SELECT * FROM TB_ECAT_PROP_SET PROP_SET
+                    WHERE SCH_YN ='Y'
+                    AND EXISTS
+                    (
+                        SELECT  1
+                        FROM   TB_ECAT_LANG_TRAN_M LANG
+                        WHERE LANG.PROP = PROP_SET.PROP_ISO
+                    )
+            ) T2
+            ON T1.PROP_GRP_CD = T2.PROP_GRP_CD
+            ORDER BY T2.SQNO ASC
+    </select>
+    
+    <!-- Item Group List 필터에 Combo Code/Value 조회 -->
+    <select id="selectItemPropComboList" resultType="CodeInfo" parameterType="AppInfo">
+		SELECT  PLM.CCODE AS CODE,
+		        PLM.CVALUE AS NAME
+		FROM    TB_ECAT_PROP_SET EPS
+		LEFT OUTER JOIN (
+		    SELECT  CSYMBOL, CSEQ, CCODE, CVALUE 
+		    FROM    IF_PLM_ATTR T1, IF_PLM_ATTR_LOV T2
+		    WHERE   T1.UID = T2.ATTR_UID
+		) PLM
+		ON  EPS.PROP_ISO = PLM.CSYMBOL
+		WHERE CSYMBOL IS NOT NULL
+		AND   EPS.PROP_ISO = #{prop_iso}
+        GROUP BY PLM.CCODE, PLM.CVALUE
+        ORDER BY PLM.CCODE
+	</select>
+	
+	<!-- Item Group 정보 조회 (Brand Logo, ItemGroup 명칭, Header1) -->
+    <select id="selectItemGroupInfo" resultType="AppInfo" parameterType="AppSearchInfo">    
+	    SELECT IG.IG_CD
+	    			,IG.IG_NM
+	    			,IG.IG_DSCR
+	    			,(CASE WHEN IMG.FILE_TYP = 'CC0026' THEN CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_ORG_NM) ELSE '' END) AS BRAND_LOGO
+	    			,TM.TM_CD
+	    			,ISNULL(TM.TM_NM, 'No-Tm Text') AS TM_NM
+		FROM TB_ECAT_CONT_IG IG WITH(NOLOCK)
+					LEFT OUTER JOIN TB_ECAT_CONT_TM_HIER HIER WITH(NOLOCK) ON HIER.USE_YN = 'Y' AND HIER.IG_CD = IG.IG_CD
+					LEFT OUTER JOIN TB_ECAT_CONT_TM TM WITH(NOLOCK) ON TM.TM_CD = HIER.TM_CD AND TM.USE_YN = 'Y'
+					LEFT OUTER JOIN TB_ECAT_CONT_F IMG  WITH(NOLOCK) ON(TM.TM_CD = IMG.FILE_CD AND IMG.FILE_TYP = 'CC0026' AND IMG.USE_YN = 'Y')
+		WHERE IG.IG_CD = #{search_ig_cd}
+	  				AND IG.USE_YN = 'Y'	
+    </select>
+    
+    <!-- More Info 조회 -->
+    <select id="selectMoreInfo" resultType="AppInfo" parameterType="AppSearchInfo">
+    	SELECT MI.DESCR AS MORE_INFO
+    				,(SELECT IG.IG_NM FROM TB_ECAT_CONT_IG IG WHERE IG.IG_CD = #{search_ig_cd} AND IG.USE_YN = 'Y') AS IG_NM
+    	FROM TB_ECAT_CONT_MI MI
+    	WHERE 1=1
+    		AND MI.IG_CD = #{search_ig_cd}
+    		AND MI.LANG_CD = #{user_lang} 
+    </select>
+    
+    <!-- Item Group 대표 이미지, ISO도면, Non-ISO도면 정보 조회 -->
+    <select id="selectIgImageInfo" resultType="AppInfo" parameterType="AppSearchInfo">
+    	SELECT
+		   	(SELECT REPLACE(IMG.FILE_PHY_PATH, 'D:/korloy/product_data_files', '' )
+		   	 FROM TB_ECAT_CONT_F IMG
+		   	 WHERE IMG.FILE_CD = #{search_ig_cd} AND IMG.USE_YN = 'Y' AND IMG.FILE_TYP = 'CC0017' ) AS ITEM_IMAGE ,
+		   (SELECT CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_THN_NM)
+		    FROM TB_ECAT_CONT_F IMG
+		    WHERE IMG.FILE_CD = #{search_ig_cd} AND IMG.USE_YN = 'Y' AND IMG.FILE_TYP = 'CC0017' ) AS ITEM_IMAGE_THUMB ,
+		   (SELECT REPLACE(IMG.FILE_PHY_PATH, 'D:/korloy/product_data_files', '' )
+		    FROM TB_ECAT_CONT_F IMG
+		    WHERE IMG.FILE_CD = #{search_ig_cd} AND IMG.USE_YN = 'Y' AND IMG.FILE_TYP = 'CC0018' ) AS ISO_IMAGE ,
+		   (SELECT CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_THN_NM)
+		    FROM TB_ECAT_CONT_F IMG
+		    WHERE IMG.FILE_CD = #{search_ig_cd} AND IMG.USE_YN = 'Y' AND IMG.FILE_TYP = 'CC0018' ) AS ISO_IMAGE_THUMB ,
+		   (SELECT REPLACE(IMG.FILE_PHY_PATH, 'D:/korloy/product_data_files', '' )
+		    FROM TB_ECAT_CONT_F IMG
+		    WHERE IMG.FILE_CD = #{search_ig_cd} AND IMG.USE_YN = 'Y' AND IMG.FILE_TYP = 'CC0019' ) AS NON_IMAGE ,
+		    (SELECT CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_THN_NM)
+		     FROM TB_ECAT_CONT_F IMG
+		     WHERE IMG.FILE_CD = #{search_ig_cd} AND IMG.USE_YN = 'Y' AND IMG.FILE_TYP = 'CC0019' ) AS NON_IMAGE_THUMB		
+    </select>
+    
+    <!-- Item Group의 Sub App 이미지 목록 조회 -->
+    <select id="selectSubImageList" resultType="AppInfo" parameterType="AppSearchInfo">
+    	SELECT 
+    			CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_THN_NM)  AS SUB_IMG
+    	FROM TB_ECAT_CONT_F IMG
+    	WHERE 1=1
+    	AND IMG.FILE_CD IN (
+    									SELECT HIER.SA_CD 
+    									FROM TB_ECAT_CONT_IG_HIER HIER
+										WHERE 1=1
+										AND HIER.IG_CD = #{search_ig_cd}
+										AND HIER.USE_YN = 'Y'
+										)
+		AND IMG.FILE_TYP = 'CC0005'    
+		AND IMG.USE_YN = 'Y'
+    </select>
+    <select id="selectIGPropGrpCd" resultType="String" parameterType="String">
+		SELECT TOP 1 T.PROP_GRP_CD
+		FROM TB_ECAT_CONT_IG_HIER T
+		WHERE T.IG_CD = #{ig_cd}
+		AND T.PROP_GRP_CD IS NOT NULL
+		<!--  _HIER.USE_YN은 상위 카테고리(Main or Sub App)에 연결돼 있는지 확인하는 컬럼인데 프로퍼티 그룹코드 조회 시에도 넣어야 하는지 확인 필요. -->
+		AND T.USE_YN = 'Y'
+    </select>
+    <!-- 아이템 목록 조회 -->
+    <select id="selectItemList" resultType="map" parameterType="AppSearchInfo">
+    	{CALL  SP_ITEM_GROUP_LIST(#{search_prop_grp_cd}, #{search_ig_cd}, NULL, NULL, NULL, #{search_unit_cd})}
+    	<!-- 
+    	SELECT * 
+    	FROM V_ECAT_CONT_LIST V
+		WHERE V.MATNR IN (
+								SELECT IT.MATNR
+								FROM TB_ECAT_CONT_IT IT
+								WHERE 1=1
+											AND IT.IG_CD = #{search_ig_cd}
+											AND IT.USE_YN = 'Y'
+									)
+		ORDER BY V.MATNR DESC, V.DESIGNATION DESC
+		 -->
+    </select>
+    
+    <!-- 아이템그룹의 아이템들이 Inserteable한 아이템인지 확인 (IIC_CNT 값이 0 이면, 해당 그룹에 Inserteable 한 ITEM 이 하나도 없다는 뜻이므로, GRADE 컬럼이 안 나오도록 처리)   -->
+    <select id="selectItemInsertsCnt" resultType="String" parameterType="AppSearchInfo">
+    	SELECT COUNT(1) AS IIC_CNT
+    	FROM TB_ECAT_CONT_IT IT
+    	WHERE IT.IG_CD = #{search_ig_cd}
+  			AND EXISTS (SELECT 1 FROM TB_ECAT_CONT_IT_PROP PROP WHERE PROP.MATNR = IT.MATNR AND PROP.SYMBOL = 'IIC')    	
+  			AND IT.USE_YN = 'Y'
+  			AND IT.ESC_GB = 'Y'
+    </select>
+    
+	<!-- Item 정보 취득 -->
+    <select id="selectSPItemInfo" resultType="map" parameterType="AppSearchInfo">
+        {CALL  SP_ITEM_LIST(#{search_prop_grp_cd}, #{search_matnr})}
+    </select>
+	
+	<!-- Item 정보 취득 -->
+	<select id="selectItemInfo" resultType="map" parameterType="AppSearchInfo">	
+        SELECT  *
+                    ,(SELECT ST.LABST FROM IF_ECAT_STOCK ST WHERE ST.WERKS='1000' AND ST.MATNR = IT.MATNR) AS ST_LABST
+                    ,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = IT.MATNR AND F.FILE_TYP = 'CC0028') AS P21_FILE
+                    ,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = IT.MATNR AND F.FILE_TYP = 'CC0023') AS GTC_FILE
+                    ,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = IT.MATNR AND F.FILE_TYP = 'CC0022') AS DXF_FILE
+                    ,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = IT.MATNR AND F.FILE_TYP = 'CC0020') AS STP_BASIC_FILE
+                    ,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = IT.MATNR AND F.FILE_TYP = 'CC0021') AS STP_DETAIL_FILE
+                    ,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_THN_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = IT.MATNR AND F.FILE_TYP = 'CC0106') AS DXF_IMG_THUMB
+                    ,(SELECT REPLACE(F.FILE_PHY_PATH, 'D:/korloy/product_data_files', '' ) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = IT.MATNR AND F.FILE_TYP = 'CC0106') AS DXF_IMG    
+                    ,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_THN_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = IT.MATNR AND F.FILE_TYP = 'CC0017') AS ITEM_IMAGE_THUMB
+                    ,(SELECT REPLACE(F.FILE_PHY_PATH, 'D:/korloy/product_data_files', '' ) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = IT.MATNR AND F.FILE_TYP = 'CC0017') AS ITEM_IMG
+        FROM    TB_ECAT_CONT_IT IT
+        WHERE 1=1
+                AND IT.MATNR = #{search_matnr}
+                AND IT.USE_YN = 'Y'
+                AND IT.ESC_GB = 'Y'
+		<!--
+		SELECT	*
+					,(SELECT ST.LABST FROM IF_ECAT_STOCK ST WHERE ST.WERKS='1000' AND ST.MATNR = #{search_matnr}) AS ST_LABST
+					,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = #{search_matnr} AND F.FILE_TYP = 'CC0028') AS P21_FILE
+					,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = #{search_matnr} AND F.FILE_TYP = 'CC0023') AS GTC_FILE
+					,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = #{search_matnr} AND F.FILE_TYP = 'CC0022') AS DXF_FILE
+					,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = #{search_matnr} AND F.FILE_TYP = 'CC0020') AS STP_BASIC_FILE
+					,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_ORG_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = #{search_matnr} AND F.FILE_TYP = 'CC0021') AS STP_DETAIL_FILE
+					,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_THN_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = #{search_matnr} AND F.FILE_TYP = 'CC0106') AS DXF_IMG_THUMB
+					,(SELECT REPLACE(F.FILE_PHY_PATH, 'D:/korloy/product_data_files', '' ) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = #{search_matnr} AND F.FILE_TYP = 'CC0106') AS DXF_IMG	
+					,(SELECT CONCAT(F.FILE_DWL_PATH, '/', F.FILE_THN_NM) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = #{search_matnr} AND F.FILE_TYP = 'CC0017') AS ITEM_IMAGE_THUMB
+					,(SELECT REPLACE(F.FILE_PHY_PATH, 'D:/korloy/product_data_files', '' ) FROM TB_ECAT_CONT_F F WHERE F.FILE_CD = #{search_matnr} AND F.FILE_TYP = 'CC0017') AS ITEM_IMG					
+					,IT.STRGR
+		FROM	V_ECAT_CONT_LIST V					
+					,TB_ECAT_CONT_IT IT
+		WHERE 1=1
+				AND V.MATNR = #{search_matnr}
+				AND V.MATNR = IT.MATNR
+				AND IT.USE_YN = 'Y'
+        -->
+	</select>
+	
+	<!-- Item 마지막 카트번호 -->
+ 	<select id="selectItemLastCartNo" resultType="String" parameterType="AppSearchInfo">
+ 		SELECT TOP 1
+ 				D.CART_NO
+		FROM TB_ECAT_BASKET_M M
+				 ,TB_ECAT_BASKET_D D
+		WHERE 1=1
+			AND M.USER_ID = #{login_user_id}
+			AND D.MATNR = #{search_matnr}
+			AND M.CART_NO = D.CART_NO
+			AND M.USE_YN = 'Y'
+			AND D.USE_YN = 'Y'
+		ORDER BY D.LST_DT DESC
+ 	
+	</select>
+	
+	<!-- Item Property Symbol 목록 조회 -->
+ 	<select id="selectItemPropSymbolList" resultType="AppInfo" parameterType="AppSearchInfo">
+		SELECT
+			DISTINCT T2.PROP_ISO AS PROP_ISO
+			,T2.PROP_N_ISO AS PROP_N_ISO
+	      	,T2.DISP_PC_YN AS DISP_PC_YN 
+	      	,T2.DISP_MB_YN AS DISP_MB_YN
+	      	,T2.SCH_TYP
+	      	,T2.UNIT_METR
+	      	,T2.UNIT_INCH
+	      	,T2.SQNO
+		FROM (
+			SELECT * FROM TB_ECAT_CONT_IG_HIER IG_HIER
+				WHERE 1=1
+		        <if test='ig_cd_arr != null and ig_cd_arr != ""'>
+		        AND IG_HIER.IG_CD IN
+		             <foreach separator="," open="(" close=")" collection="ig_cd_arr" item="ig_cd" index="index">
+		                #{ig_cd}
+		            </foreach>
+		        </if>
+				<if test='search_ig_cd != null and search_ig_cd !=""'>
+				AND IG_CD = #{search_ig_cd}
+				</if>
+		        <if test='search_ar_sa_cd != null and search_ar_sa_cd.length !=0'>
+		               AND IG_HIER.SA_CD IN 
+		               <foreach collection="search_ar_sa_cd" item="state" index="index" separator="," open="(" close=")">
+		                   #{state}
+		               </foreach>
+		        </if>		        
+				AND USE_YN = 'Y'
+			) T1 
+			JOIN (
+					SELECT * FROM TB_ECAT_PROP_SET PROP_SET
+	             	WHERE SCH_YN ='Y'
+	             	AND EXISTS
+	             	(
+                        SELECT  1
+                        FROM   TB_ECAT_LANG_TRAN_M LANG
+                        WHERE LANG.PROP = PROP_SET.PROP_ISO
+	             	)
+			) T2
+			ON T1.PROP_GRP_CD = T2.PROP_GRP_CD
+			ORDER BY T2.SQNO ASC
+	</select>
+		
+	<!-- Related Inserts 목록 조회 -->
+	<select id="selectRelatedInsertsList" resultType="map" parameterType="AppSearchInfo">
+		{CALL SP_RELATED_LIST('INS', #{search_matnr}, 6)}
+		<!-- 
+		SELECT * 
+    	FROM V_ECAT_CONT_LIST V
+		WHERE V.MATNR IN (		
+									SELECT IT.MATNR 
+										FROM TB_ECAT_CONT_IT IT
+									WHERE IT.VENDER_ID LIKE 'INS%'
+										AND IT.USE_YN = 'Y'
+								  		AND IT.MATNR IN (
+																	SELECT DISTINCT MATNR
+																		FROM TB_ECAT_CONT_IT_PROP
+																	WHERE MATNR IN (
+																							SELECT DISTINCT MATNR 
+																								FROM TB_ECAT_CONT_IT_PROP
+																							WHERE VAL LIKE CONCAT('%',LEFT(REPLACE(REPLACE(REPLACE(REPLACE(
+																															(SELECT PROP.VAL 
+																															FROM TB_ECAT_CONT_IT_PROP PROP
+																															WHERE PROP.MATNR = #{search_matnr}
+							      																							AND PROP.SYMBOL = 'IIC') ,'KOR$',''),'ISO$',''),'{',''),'}',''),6),'%')
+										  													AND SYMBOL = 'IIC'
+																								)
+																)
+									)
+		ORDER BY V.DESIGNATION
+		 -->
+	</select>
+	
+	<!-- Related Holders 목록 조회 -->
+	<select id="selectRelatedHoldersList" resultType="map" parameterType="AppSearchInfo">
+		{CALL SP_RELATED_LIST('ADP', #{search_matnr}, 10)}
+		<!--  
+		SELECT * 
+    	FROM V_ECAT_CONT_LIST V
+		WHERE V.MATNR IN (
+									SELECT IT.MATNR 
+										FROM TB_ECAT_CONT_IT IT
+									WHERE IT.VENDER_ID LIKE 'ADP%'
+										AND IT.USE_YN = 'Y'
+										AND IT.MATNR IN (
+																	SELECT DISTINCT MATNR
+																		FROM TB_ECAT_CONT_IT_PROP
+																	WHERE MATNR IN (
+																							SELECT DISTINCT MATNR 
+																								FROM TB_ECAT_CONT_IT_PROP
+																							WHERE VAL LIKE CONCAT('%',LEFT(
+																															(SELECT PROP.VAL 
+																															FROM TB_ECAT_CONT_IT_PROP PROP
+																															WHERE PROP.MATNR = #{search_matnr}
+																															AND PROP.SYMBOL = 'CCMS'
+																															),10),'%')
+			  																				AND SYMBOL = 'CCWS'
+																	)
+									)
+	)
+	ORDER BY V.DESIGNATION
+	-->
+	</select>
+	
+	<!-- Recommended Cutting Speeds  목록 갯수 조회 -->
+	<select id="selectCuttingSpeedListCnt"  resultType="int" parameterType="AppSearchInfo">
+		SELECT COUNT(1) 
+		FROM	IF_ECAT_ITEMCUT ITEMCUT
+			LEFT OUTER JOIN TB_ECAT_CONT_IT IT 
+				ON IT.MATNR = ITEMCUT.MATNR 
+				AND IT.USE_YN = 'Y'
+				AND IT.ESC_GB = 'Y'
+		WHERE	ITEMCUT.MATNR = #{search_matnr}	
+	</select>
+	
+	<!-- Recommended Cutting Speeds  목록 조회 -->
+	<select id="selectCuttingSpeedList" resultType="AppInfo" parameterType="AppSearchInfo">
+		SELECT ITEMCUT.*
+				  ,IT.GRADE 
+		FROM	IF_ECAT_ITEMCUT ITEMCUT
+			LEFT OUTER JOIN TB_ECAT_CONT_IT IT 
+				ON IT.MATNR = ITEMCUT.MATNR 
+				AND IT.USE_YN = 'Y'
+				AND IT.ESC_GB = 'Y'
+		WHERE	ITEMCUT.MATNR = #{search_matnr}	
+		ORDER BY ITEMCUT.SEQ
+	</select>
+
+	<!-- Spare Parts  목록 갯수 조회 -->
+	<select id="selectSparePartsListCnt" resultType="int" parameterType="AppSearchInfo">		
+		SELECT COUNT(1) 
+		FROM IF_ECAT_BOM AS BOM
+			LEFT OUTER JOIN TB_ECAT_CONT_F AS IMG
+				ON BOM.BOM_MATNR = IMG.FILE_CD
+				AND IMG.FILE_TYP = 'CC0017'
+		WHERE 1=1
+			AND BOM.MATNR =  #{search_matnr}  <!-- test용 : '1-06-000631' --> 
+	</select>
+		
+	<!-- Spare Parts  목록 조회 -->
+	<select id="selectSparePartsList" resultType="AppInfo" parameterType="AppSearchInfo">		
+		SELECT BOM.*
+				  ,CONCAT(IMG.FILE_DWL_PATH, '/', IMG.FILE_THN_NM)  AS ITEM_IMG
+				   ,(SELECT IT.UNIT_CD FROM TB_ECAT_CONT_IT IT WHERE IT.MATNR  = BOM.BOM_MATNR ) AS UNIT_CD 
+		FROM IF_ECAT_BOM AS BOM
+			LEFT OUTER JOIN TB_ECAT_CONT_F AS IMG
+				ON BOM.BOM_MATNR = IMG.FILE_CD
+				AND IMG.FILE_TYP = 'CC0017'
+		WHERE 1=1
+			AND BOM.MATNR =  #{search_matnr}  <!-- test용 : '1-06-000631' --> 
+		ORDER BY BOM.IDNRK_HYUNG
+	</select>
+	
+	<!-- 장바구니 목록  조회 -->		
+	<select id="selectCartList" resultType="AppInfo" parameterType="AppSearchInfo">
+		SELECT	CART.CART_NO
+					,CART.CART_NM
+		FROM TB_ECAT_BASKET_M CART 
+			WHERE 1=1
+        	<if test='login_user_id != null and login_user_id != ""'>
+        	AND CART.USER_ID = #{login_user_id}
+        	</if>
+			AND CART.USE_YN = 'Y' 
+			ORDER BY CART.LST_DT
+	</select>
+	
+	<!-- 장바구니 등록 -->
+	<insert id="insertCart" parameterType="AppInfo" useGeneratedKeys="true" keyProperty="cart_no" >
+        INSERT INTO TB_ECAT_BASKET_M (
+            USER_ID 
+           ,CART_NM
+           ,USE_YN
+           ,FIR_ID		
+           ,FIR_DT		
+           ,LST_ID		
+           ,LST_DT		
+        ) VALUES (
+            #{login_user_id}
+           ,#{cart_nm}
+           ,'Y'
+           ,#{login_user_id}
+           ,getdate()
+           ,#{login_user_id}
+           ,getdate()
+        )
+	</insert>
+	
+	<!-- 장바구니 아이템 추가 -->
+	<insert id="insertCartItem" parameterType="AppInfo">
+        INSERT INTO TB_ECAT_BASKET_D (
+            CART_NO
+           ,WERKS
+           ,MATNR
+           ,DESIGNATION
+           ,GRADE
+           ,QTY
+           ,USE_YN
+           ,FIR_ID		
+           ,FIR_DT		
+           ,LST_ID		
+           ,LST_DT	
+        ) VALUES (
+            CAST (#{cart_no} AS INTEGER)
+           ,(SELECT WERKS FROM TB_ECAT_CONT_IT WHERE MATNR = #{matnr} )
+           ,#{matnr}
+           ,(SELECT DESIGNATION FROM TB_ECAT_CONT_IT WHERE MATNR = #{matnr} )
+           ,(SELECT GRADE FROM TB_ECAT_CONT_IT WHERE MATNR = #{matnr} )
+           ,1
+           ,'Y'
+           ,#{login_user_id}
+           ,getdate()
+           ,#{login_user_id}
+           ,getdate()
+        )
+	</insert>
+	
+	<!-- Assembly 그룹 목록  조회 -->		
+	<select id="selectAssemblyList" resultType="AppInfo" parameterType="AppSearchInfo">
+		SELECT	ASSEM.ASSEM_NO
+					,ASSEM.ASSEM_NM
+		FROM TB_ECAT_ASSEM_M ASSEM 
+			WHERE 1=1
+        	<if test='login_user_id != null and login_user_id != ""'>
+        	AND ASSEM.USER_ID = #{login_user_id}
+        	</if>
+			AND ASSEM.USE_YN = 'Y' 
+			ORDER BY ASSEM.FIR_DT DESC
+	</select>
+	
+	<!-- Assembly 아이템 리스트 조회 -->
+	<select id="selectAssemblyItemList" resultType="AppInfo" parameterType="AppInfo">
+		SELECT D.ASSEM_NO
+			      ,D.MATNR
+			      ,(SELECT IT.IG_CD FROM TB_ECAT_CONT_IT IT
+			      	WHERE IT.MATNR = D.MATNR) AS IG_CD
+			      ,D.DESIGNATION
+		FROM   TB_ECAT_ASSEM_D D
+		WHERE  1=1
+				AND D.ASSEM_NO = #{assem_no}
+				<!-- AND D.USER_ID = #{login_user_id} -->
+			  AND	D.USE_YN = 'Y'
+		ORDER BY D.LST_DT	DESC
+	</select>
+	
+	<!-- Assembly 그룹 등록 -->
+	<insert id="insertAssembly" parameterType="AppInfo" useGeneratedKeys="true" keyProperty="assem_no" >
+       INSERT INTO TB_ECAT_ASSEM_M (
+           USER_ID 
+          ,ASSEM_NM
+          ,USE_YN
+          ,FIR_ID		
+          ,FIR_DT		
+          ,LST_ID		
+          ,LST_DT		
+       ) VALUES (
+           #{login_user_id}
+          ,#{assem_nm}
+          ,'Y'
+          ,#{login_user_id}
+          ,getdate()
+          ,#{login_user_id}
+          ,getdate()
+       )
+	</insert>
+	
+	<!-- Assembly 아이템 추가 -->
+	<insert id="insertAssemblyItem" parameterType="AppInfo">
+        INSERT INTO TB_ECAT_ASSEM_D (
+            ASSEM_NO
+           ,MATNR
+           ,DESIGNATION
+           ,GRADE
+           ,USE_YN
+           ,FIR_ID		
+           ,FIR_DT		
+           ,LST_ID		
+           ,LST_DT	
+        ) VALUES (
+            CAST (#{assem_no} AS INTEGER)
+           ,#{matnr}
+           ,(SELECT DESIGNATION FROM TB_ECAT_CONT_IT WHERE MATNR = #{matnr})
+           ,(SELECT GRADE FROM TB_ECAT_CONT_IT WHERE MATNR = #{matnr})
+           ,'Y'
+           ,#{login_user_id}
+           ,getdate()
+           ,#{login_user_id}
+           ,getdate()
+        )
+	</insert>
+	
+	<!-- Assembly Build파일 초기화 -->
+	<update id="updateAssemblyFile" parameterType="AppInfo">
+		UPDATE	TB_ECAT_ASSEM_M
+		SET
+				STP_B_FILE			= NULL
+				,STP_D_FILE			= NULL
+				,DXF_FILE				= NULL
+				,GTC_FILE				= NULL
+				,P21_FILE				= NULL
+				,LST_DT				= getdate()
+				,LST_ID					= #{login_user_id}
+		WHERE	ASSEM_NO			= CAST (#{assem_no} AS INTEGER)
+	</update>
+	
+	<!-- 장바구니 아이템 수량 수정 -->
+	<update id="updateCartItemQty" parameterType="AppInfo">
+		UPDATE	TB_ECAT_BASKET_D
+		SET		LST_DT			= getdate()
+				,LST_ID			= #{login_user_id}
+				,QTY			= (SELECT ISNULL(MAX(A.QTY)+1, 0) FROM TB_ECAT_BASKET_D A WHERE A.MATNR = #{matnr} AND A.CART_NO = CAST (#{cart_no} AS INTEGER))
+		WHERE	CART_NO			= CAST (#{cart_no} AS INTEGER)
+		  AND	MATNR			= #{matnr}
+		
+	</update>
+	
+	<!-- 장바구니 수정 (총가격) -->
+	<update id="updateCart" parameterType="BasketInfo">
+		 UPDATE TB_ECAT_BASKET_M
+	     SET	LST_DT      	= getdate()
+		        ,TOTAL_PRICE 	= #{total_price}
+		        ,LST_ID      	= #{login_user_id}	
+		 WHERE  CART_NO     	= CAST (#{cart_no} AS INTEGER)
+	</update>
+	
+	<!-- 장바구니에 동일한 아이템 있는지 확인 -->
+	<select id="selectDuplicatedItemCnt" parameterType="AppInfo" resultType="int">
+		SELECT 	COUNT(1)			
+		FROM TB_ECAT_BASKET_D TEBD 
+		WHERE TEBD.CART_NO 	= #{cart_no}
+		  AND TEBD.MATNR 	= #{matnr}
+	</select>
+	
+	<!-- 장바구니에 아이템 정보 취득 -> 장바구니 그룹의 총 가격을 수정할 때  사용 -->
+	<select id="selectCartItemList" parameterType="AppInfo" resultType="BasketInfo">
+		      SELECT TEBD.CART_NO
+              ,TEBD.MATNR
+              ,TEBD.PRICE
+              ,TEBD.QTY
+              ,( SELECT CODE.CODE_VAL
+             	 FROM 	TB_ECAT_CODE CODE
+             	 WHERE 	CODE.CODE_KEY = TEBD.CUR)	AS CUR
+	    FROM   TB_ECAT_BASKET_D TEBD
+	    WHERE  TEBD.CART_NO 	= CAST(#{cart_no} AS INTEGER)
+	      AND  EXISTS( SELECT 	CART_NO
+	      			  FROM 		TB_ECAT_BASKET_M TEBM
+	      			  WHERE		TEBM.CART_NO = TEBD.CART_NO
+	      				AND		TEBM.USER_ID = #{login_user_id}
+	      		)
+	      AND	TEBD.USE_YN = 'Y'
+	</select>
+	
+	<!-- ISO metric/inch 계산식 단위 및 값 조회 -->
+	<select id="selectIsoCalList" parameterType="AppSearchInfo" resultType="AppInfo">
+		SELECT  ISO.ISO AS ISO
+					, ISO.UNIT_METR AS UNIT_METR 
+					, ISO.UNIT_INCH AS UNIT_INCH
+					, ISO.CAL_UNIT AS CAL_UNIT
+					, ISO.CAL_VAL AS CAL_VAL
+		FROM TB_ECAT_CONT_ISO ISO
+		WHERE ISO.USE_YN = 'Y'
+	</select>
+	
+	
+</mapper>

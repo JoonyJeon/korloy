@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- DAO 구현체 자동생성을 위한 DAO 인터페이스 정의 -->
+<mapper namespace="com.eaction.framework.business.logic.search.dao.SearchDao">
+	<!-- 검색조건 MainApp 조회 -->
+	<select id="selectSearchCondMainApp" resultType="SearchInfo">
+	   SELECT MA_CD, MA_NM
+	   FROM TB_ECAT_CONT_MA MA
+	   WHERE MA.USE_YN = 'Y'
+	   ORDER BY SEQ
+	</select>
+
+    <!-- 검색조건 SubApp 조회 -->
+    <select id="selectSearchCondSubApp" parameterType="SearchInfo" resultType="SearchInfo">
+		SELECT    SA_CD, SA_NM
+		FROM     TB_ECAT_CONT_SA_HIER SA
+		WHERE    SA.USE_YN = 'Y'		
+		AND SA.MA_CD =#{ma_cd}
+		ORDER BY SEQ
+    </select>
+    
+    <!-- 검색조건 ItemGroup 조회 -->
+    <select id="selectSearchCondItemGroup" parameterType="SearchInfo" resultType="SearchInfo">
+        SELECT    IG_CD, IG_NM
+        FROM     TB_ECAT_CONT_IG_HIER
+        WHERE    USE_YN = 'Y'        
+        AND SA_CD =#{sa_cd}
+        ORDER BY SEQ
+    </select>
+    
+    <!-- 검색 ITEM 조회 -->
+    <select id="selectSearchItemListCnt" parameterType="SearchInfo" resultType="int">
+        SELECT COUNT(1)
+        FROM(
+                SELECT  IT.MATNR,
+                           IT.NEW_TO_DT,
+                           IT.NEW_FR_DT,
+                           IT.DESIGNATION,
+                       <!--    IT.GRADE,   -->
+                           IT.IG_CD
+	            FROM    TB_ECAT_CONT_IT IT
+	            JOIN      TB_ECAT_CONT_IG_HIER IG_HIER ON(IT.IG_CD = IG_HIER.IG_CD AND IG_HIER.USE_YN='Y')
+	            JOIN      TB_ECAT_CONT_SA_HIER SA_HIER ON(IG_HIER.SA_CD = SA_HIER.SA_CD AND SA_HIER.USE_YN= 'Y')
+	            JOIN      TB_ECAT_CONT_MA MA ON(SA_HIER.MA_CD = MA.MA_CD AND MA.USE_YN='Y')
+                WHERE   IT.USE_YN = 'Y'
+                AND IT.ESC_GB = 'Y'
+                <if test='ma_cd != null and ma_cd !=""'>
+                AND MA.MA_CD =#{ma_cd}
+                </if>
+                <if test='sa_cd != null and sa_cd !=""'>
+                AND SA_HIER.SA_CD =#{sa_cd}
+                </if>
+                <if test='ig_cd != null and ig_cd !=""'>
+                AND IG_HIER.IG_CD =#{ig_cd}
+                </if>
+                <if test='matnr != null and matnr !=""'>
+                AND IT.MATNR =#{matnr}
+                </if>
+               <!--  <if test='inch_use_yn == "N"'>
+                AND IT.UNIT_CD <![CDATA[<>]]> 'CC0002'
+                </if> -->
+                <choose>
+                	<when test='inch_use_yn == "N"'>
+                		AND IT.UNIT_CD <![CDATA[<>]]> 'CC0002'
+                	</when>
+                	<otherwise>
+                		<if test='unit_cd == "CC0001"'>
+                		AND IT.UNIT_CD <![CDATA[<>]]> 'CC0002'
+                		</if>
+                		<if test='unit_cd == "CC0002"'>
+                		AND IT.UNIT_CD <![CDATA[<>]]> 'CC0001'
+                		</if>
+                	</otherwise>
+                </choose>
+                <if test='auto_input_text != null and auto_input_text !=""'>
+                AND
+                (
+                    IT.MATNR LIKE '%${auto_input_text}%' OR
+                    IT.MAKTX LIKE '%${auto_input_text}%' OR
+                    IT.DESIGNATION LIKE '%${auto_input_text}%'  OR
+                    <if test='unit_cd == "CC0002"'>
+                    IT.DESIGNATION_INCH LIKE '%${auto_input_text}%'  OR
+                    </if>
+                    IT.GRADE LIKE '%${auto_input_text}%'  OR
+                    IG_HIER.IG_NM LIKE '%${auto_input_text}%'
+                )
+                </if>
+                GROUP BY IT.MATNR, IT.NEW_TO_DT, IT.NEW_FR_DT, IT.DESIGNATION, IT.GRADE, IT.IG_CD
+        ) TB
+            
+    </select>
+    <select id="selectSearchItemList" parameterType="SearchInfo" resultType="SearchInfo" fetchSize="1000">
+        SELECT A.*
+        FROM
+        (
+            SELECT    ROW_NUMBER() OVER(ORDER BY ${orderSort}) AS RN,  
+                    TB.MATNR,
+                    TB.MAKTX,
+                    CASE
+                    WHEN
+                    (   
+                        CONVERT(DATETIME, TB.NEW_FR_DT) <![CDATA[<=]]> GETDATE()
+                        AND
+                        GETDATE() <![CDATA[<=]]> CONVERT(DATETIME, CONCAT(TB.NEW_TO_DT, ' 23:59:59'), 120)
+                        AND
+                        TB.NEW_FR_DT IS NOT NULL AND LEN(TRIM(TB.NEW_FR_DT)) <![CDATA[>]]> 0
+                        AND
+                        TB.NEW_TO_DT IS NOT NULL AND LEN(TRIM(TB.NEW_TO_DT)) <![CDATA[>]]> 0
+                    )THEN 'Y'
+                    ELSE 'N'
+                    END AS NEW_YN,
+                    TB.DESIGNATION,
+<!--                TB.GRADE,   -->
+                    TB.IG_CD,
+                    (SELECT IG_NM FROM TB_ECAT_CONT_IG WHERE IG_CD = TB.IG_CD) AS IG_NM,
+                    (SELECT CONCAT(FILE_DWL_PATH, '/', FILE_ORG_NM) FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0020') AS STP_FILE,
+                    (SELECT CONCAT(FILE_DWL_PATH, '/', FILE_ORG_NM) FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0022') AS DXF_FILE,
+                    (SELECT FILE_ORG_NM FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0020') AS STP_FILE_NAME,
+                    (SELECT FILE_ORG_NM FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0022') AS DXF_FILE_NAME,
+                    (SELECT CONCAT(FILE_DWL_PATH, '/', FILE_THN_NM) FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0017') AS ITEM_IMAGE_THUMB
+            FROM
+            (
+                    SELECT  IT.MATNR,
+                               IT.MAKTX,
+                               IT.NEW_TO_DT,
+                               IT.NEW_FR_DT,
+                               CASE WHEN #{unit_cd} = 'CC0001' THEN CONCAT(CONCAT(IT.DESIGNATION, ' '), IT.GRADE)
+                               		WHEN #{unit_cd} = 'CC0002' THEN CONCAT(CONCAT(ISNULL(IT.DESIGNATION_INCH, IT.DESIGNATION), ' '), IT.GRADE)
+                               		ELSE CONCAT(CONCAT(IT.DESIGNATION, ' '), IT.GRADE)
+                               END DESIGNATION,
+                               IT.GRADE,
+                               IT.IG_CD
+		            FROM    TB_ECAT_CONT_IT IT
+                JOIN      TB_ECAT_CONT_IG_HIER IG_HIER ON(IT.IG_CD = IG_HIER.IG_CD AND IG_HIER.USE_YN='Y')
+                JOIN      TB_ECAT_CONT_SA_HIER SA_HIER ON(IG_HIER.SA_CD = SA_HIER.SA_CD AND SA_HIER.USE_YN= 'Y')
+                JOIN      TB_ECAT_CONT_MA MA ON(SA_HIER.MA_CD = MA.MA_CD AND MA.USE_YN='Y')
+		            WHERE   IT.USE_YN = 'Y'
+		            AND IT.ESC_GB = 'Y'
+		            <if test='ma_cd != null and ma_cd !=""'>
+		            AND MA.MA_CD =#{ma_cd}
+		            </if>
+		            <if test='sa_cd != null and sa_cd !=""'>
+		            AND SA_HIER.SA_CD =#{sa_cd}
+		            </if>
+		            <if test='ig_cd != null and ig_cd !=""'>
+		            AND IG_HIER.IG_CD =#{ig_cd}
+		            </if>
+		            <if test='matnr != null and matnr !=""'>
+		            AND IT.MATNR =#{matnr}
+		            </if>
+	                <!-- <if test='inch_use_yn == "N"'>
+	                AND IT.UNIT_CD <![CDATA[<>]]> 'CC0002'
+	                </if> -->
+	                <choose>
+	                	<when test='inch_use_yn == "N"'>
+	                		AND IT.UNIT_CD <![CDATA[<>]]> 'CC0002'
+	                	</when>
+	                	<otherwise>
+	                		<if test='unit_cd == "CC0001"'>
+	                		AND IT.UNIT_CD <![CDATA[<>]]> 'CC0002'
+	                		</if>
+	                		<if test='unit_cd == "CC0002"'>
+	                		AND IT.UNIT_CD <![CDATA[<>]]> 'CC0001'
+	                		</if>
+	                	</otherwise>
+	                </choose>
+		            <if test='auto_input_text != null and auto_input_text !=""'>
+		            AND
+		            (
+		                IT.MATNR LIKE '%${auto_input_text}%' OR
+		                IT.MAKTX LIKE '%${auto_input_text}%' OR
+		                IT.DESIGNATION LIKE '%${auto_input_text}%'  OR
+	                    <if test='unit_cd == "CC0002"'>
+              	        IT.DESIGNATION_INCH LIKE '%${auto_input_text}%'  OR
+              	        </if>
+		                IT.GRADE LIKE '%${auto_input_text}%'  OR
+                        IG_HIER.IG_NM LIKE '%${auto_input_text}%'
+		            )
+		            </if>
+		            GROUP BY IT.MATNR, IT.MAKTX, IT.NEW_TO_DT, IT.NEW_FR_DT, IT.DESIGNATION, IT.GRADE, IT.IG_CD, IT.DESIGNATION_INCH
+            ) TB
+        ) A
+        ORDER BY RN 
+        <if test='isPageYn != "" and isPageYn == "Y"'>
+        OFFSET ${startIndex} * ${pageCount} ROWS
+        FETCH NEXT ${pageCount} ROWS ONLY
+        </if>
+    </select>
+    
+    <!-- Parametric 검색 ITEM 조회 -->
+    <select id="selectParaSearchItemListCnt" parameterType="SearchInfo" resultType="int">
+        WITH GTC_CLAS_HIER1 AS ( 
+                        SELECT
+                                GTC_VD_ID, 
+                                GTC_VD_PID
+                        FROM TB_ECAT_GTC_HIER
+                        WHERE GTC_VD_PID = #{gtc_vd_id}
+                          AND USE_YN = 'Y'
+                        UNION ALL 
+                        SELECT
+                                EGH.GTC_VD_ID,
+                                EGH.GTC_VD_PID
+                        FROM TB_ECAT_GTC_HIER EGH, GTC_CLAS_HIER1 GCH
+                        WHERE EGH.GTC_VD_PID = GCH.GTC_VD_ID
+                          AND USE_YN = 'Y'
+        )
+        SELECT COUNT(1)
+        FROM(
+                SELECT  IT.MATNR,
+                           IT.NEW_TO_DT,
+                           IT.NEW_FR_DT,
+                           IT.DESIGNATION,
+                           IT.GRADE,
+                           IT.IG_CD
+                FROM    TB_ECAT_CONT_IT IT
+                WHERE   IT.USE_YN = 'Y'
+                AND IT.ESC_GB = 'Y'
+                <choose>
+					<when test='inch_use_yn == "N"'>
+						AND IT.UNIT_CD != 'CC0002'
+					</when>
+					<otherwise>
+						<if test='unit_cd == "CC0001"'>
+						AND IT.UNIT_CD != 'CC0002'
+						</if>
+						<if test='unit_cd == "CC0002"'>
+						AND IT.UNIT_CD != 'CC0001'
+						</if>
+					</otherwise>
+				</choose>
+                AND IT.VENDER_ID IN(
+                                        SELECT  GTC_VD_ID
+                                        FROM GTC_CLAS_HIER1 GCH
+                                        UNION ALL
+                                        SELECT #{gtc_vd_id} AS GTC_VD_ID
+                )
+                <if test='filter_sch_sql != null and filter_sch_sql != ""'>
+                 AND EXISTS 
+                 (
+                     SELECT 1
+                     FROM TB_ECAT_CONT_IT_PROP IT_PROP
+                     WHERE IT.MATNR = IT_PROP.MATNR
+                     ${filter_sch_sql}
+                 )
+                </if>
+        ) TB
+            
+    </select>
+    <select id="selectParaSearchItemList" parameterType="SearchInfo" resultType="SearchInfo">
+        WITH GTC_CLAS_HIER1 AS ( 
+                        SELECT
+                                GTC_VD_ID, 
+                                GTC_VD_PID
+                        FROM TB_ECAT_GTC_HIER
+                        WHERE GTC_VD_PID = #{gtc_vd_id}
+                          AND USE_YN = 'Y'
+                        UNION ALL 
+                        SELECT
+                                EGH.GTC_VD_ID,
+                                EGH.GTC_VD_PID
+                        FROM TB_ECAT_GTC_HIER EGH, GTC_CLAS_HIER1 GCH
+                        WHERE EGH.GTC_VD_PID = GCH.GTC_VD_ID
+                          AND USE_YN = 'Y'
+        )
+        SELECT A.*
+        FROM
+        (
+            SELECT    ROW_NUMBER() OVER(ORDER BY ${orderSort}) AS RN,  
+                    TB.MATNR,
+                    CASE
+                    WHEN
+                    (   
+                        CONVERT(DATE, TB.NEW_FR_DT) <![CDATA[<=]]> GETDATE()
+                        AND
+                        GETDATE() <![CDATA[<=]]> CONVERT(DATE, TB.NEW_TO_DT)
+                        AND
+                        TB.NEW_FR_DT IS NOT NULL AND LEN(TRIM(TB.NEW_FR_DT)) <![CDATA[>]]> 0
+                        AND
+                        TB.NEW_TO_DT IS NOT NULL AND LEN(TRIM(TB.NEW_TO_DT)) <![CDATA[>]]> 0
+                    )THEN 'Y'
+                    ELSE 'N'
+                    END AS NEW_YN,
+                    TB.DESIGNATION,
+                    TB.GRADE,
+                    TB.IG_CD,
+                    (SELECT IG_NM FROM TB_ECAT_CONT_IG WHERE IG_CD = TB.IG_CD) AS IG_NM,
+                    (SELECT CONCAT(FILE_DWL_PATH, '/', FILE_ORG_NM) FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0020') AS STP_FILE,
+                    (SELECT CONCAT(FILE_DWL_PATH, '/', FILE_ORG_NM) FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0021') AS DXF_FILE,
+                    (SELECT FILE_ORG_NM FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0020') AS STP_FILE_NAME,
+                    (SELECT FILE_ORG_NM FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0021') AS DXF_FILE_NAME,
+                    (SELECT CONCAT(FILE_DWL_PATH, '/', FILE_THN_NM) FROM TB_ECAT_CONT_F WHERE FILE_CD = TB.MATNR AND FILE_TYP = 'CC0017') AS ITEM_IMAGE_THUMB
+            FROM
+            (
+                    SELECT  IT.MATNR,
+                               IT.NEW_TO_DT,
+                               IT.NEW_FR_DT,
+                               IT.DESIGNATION,
+                               IT.GRADE,
+                               IT.IG_CD
+                    FROM    TB_ECAT_CONT_IT IT
+                    WHERE   IT.USE_YN = 'Y'
+                    AND IT.ESC_GB = 'Y'
+                    AND IT.VENDER_ID IN(
+							                SELECT  GTC_VD_ID
+							                FROM GTC_CLAS_HIER1 GCH
+							                UNION ALL
+							                SELECT #{gtc_vd_id} AS GTC_VD_ID
+                    )
+	                <choose>
+						<when test='inch_use_yn == "N"'>
+							AND IT.UNIT_CD != 'CC0002'
+						</when>
+						<otherwise>
+							<if test='unit_cd == "CC0001"'>
+							AND IT.UNIT_CD != 'CC0002'
+							</if>
+							<if test='unit_cd == "CC0002"'>
+							AND IT.UNIT_CD != 'CC0001'
+							</if>
+						</otherwise>
+					</choose>
+	                <if test='filter_sch_sql != null and filter_sch_sql != ""'>
+	                 AND EXISTS 
+	                 (
+	                     SELECT 1
+	                     FROM TB_ECAT_CONT_IT_PROP IT_PROP
+	                     WHERE IT.MATNR = IT_PROP.MATNR
+	                     ${filter_sch_sql}
+	                 )
+	                </if>
+            ) TB
+        ) A 
+        ORDER BY RN 
+        <if test='isPageYn != "" and isPageYn == "Y"'>
+        OFFSET ${startIndex} * ${pageCount} ROWS
+        FETCH NEXT ${pageCount} ROWS ONLY
+        </if>
+    </select>
+    
+    <select id="selectGTCHierList" parameterType="SearchInfo" resultType="SearchInfo">
+        WITH GTC_CLAS_HIER1 AS ( 
+                        SELECT
+                                1 AS GTC_STEP,
+                                GTC_VD_ID, 
+                                GTC_VD_PID, 
+                                GTC_VD_NODE_NM,
+                                IDX,
+                                CONVERT(VARCHAR(255), GTC_VD_ID) SORT,
+                                CONVERT(VARCHAR(MAX), '001') GTC_SORT
+                        FROM TB_ECAT_GTC_HIER
+                        WHERE GTC_VD_PID = 'GTC-root' 
+                          AND USE_YN = 'Y'
+                        UNION ALL 
+                        SELECT
+                                GCH.GTC_STEP + 1 AS "GTC_STEP",
+                                EGH.GTC_VD_ID,
+                                EGH.GTC_VD_PID, 
+                                EGH.GTC_VD_NODE_NM,
+                                EGH.IDX,
+                                CONVERT(VARCHAR(255), CONVERT(NVARCHAR,GCH.SORT) + '\' + CONVERT(VARCHAR(255), EGH.GTC_VD_ID)) SORT,
+                                CONVERT(VARCHAR(MAX), CONCAT(GCH.GTC_SORT, REPLICATE('0',3-LEN(EGH.IDX)), EGH.IDX)) AS GTC_SORT
+                        FROM TB_ECAT_GTC_HIER EGH, GTC_CLAS_HIER1 GCH
+                        WHERE EGH.GTC_VD_PID = GCH.GTC_VD_ID
+                          AND USE_YN = 'Y'
+        )
+        SELECT
+                SORT,
+                GTC_STEP,
+                GTC_VD_ID,
+                (
+                    SELECT COUNT(1)
+                    FROM TB_ECAT_CONT_IT K
+                    WHERE K.USE_YN = 'Y'
+                    AND K.ESC_GB = 'Y'
+                    AND K.VENDER_ID = GTC_VD_ID
+	                <choose>
+						<when test='inch_use_yn == "N"'>
+							AND IT.UNIT_CD != 'CC0002'
+						</when>
+						<otherwise>
+							<if test='unit_cd == "CC0001"'>
+							AND IT.UNIT_CD != 'CC0002'
+							</if>
+							<if test='unit_cd == "CC0002"'>
+							AND IT.UNIT_CD != 'CC0001'
+							</if>
+						</otherwise>
+					</choose>
+                ) AS ITEM_CNT,
+                GTC_VD_PID,
+                (SELECT CONCAT(FILE_DWL_PATH, '/', FILE_ORG_NM) FROM TB_ECAT_CONT_F WHERE FILE_CD = GCH.GTC_VD_ID AND FILE_TYP = 'CC0087')AS GTC_VD_ICON,
+                GCH.GTC_VD_NODE_NM AS GTC_VD_NODE_NM,
+                (SELECT COUNT(1) FROM TB_ECAT_GTC_HIER WHERE GTC_VD_PID = GCH.GTC_VD_ID)AS SUB_CNT
+        FROM GTC_CLAS_HIER1 GCH
+        ORDER BY GCH.GTC_SORT ASC
+    </select>
+    
+    <!-- Item Property Symbol 목록 조회 -->
+    <select id="selectParametricSymbolList" resultType="SearchInfo" parameterType="SearchInfo">
+		WITH GTC_CLAS_HIER1 AS ( 
+		                SELECT
+		                        GTC_VD_ID, 
+		                        GTC_VD_PID
+		                FROM TB_ECAT_GTC_HIER
+		                WHERE GTC_VD_PID = #{gtc_vd_id}
+		                  AND USE_YN = 'Y'
+		                UNION ALL 
+		                SELECT
+		                        EGH.GTC_VD_ID,
+		                        EGH.GTC_VD_PID
+		                FROM TB_ECAT_GTC_HIER EGH, GTC_CLAS_HIER1 GCH
+		                WHERE EGH.GTC_VD_PID = GCH.GTC_VD_ID
+		                  AND USE_YN = 'Y'
+		)
+        SELECT
+            PROP_SET.PROP_ISO AS PROP_ISO
+            ,PROP_SET.SCH_TYP
+        FROM 
+        (
+            SELECT PROP_ISO, SCH_TYP
+            FROM TB_ECAT_PROP_SET
+            WHERE SCH_YN = 'Y'
+            GROUP BY PROP_ISO, SCH_TYP
+        ) PROP_SET
+        JOIN 
+        (
+            SELECT DISTINCT PROP_SB
+            FROM TB_ECAT_GTC_PROP
+            WHERE GTC_VD_ID IN(
+                SELECT  GTC_VD_ID
+                FROM GTC_CLAS_HIER1 GCH
+                UNION ALL
+                SELECT #{gtc_vd_id} AS GTC_VD_ID
+            )
+        )GTC_PROP ON(PROP_SET.PROP_ISO = GTC_PROP.PROP_SB)
+        WHERE EXISTS
+        (
+            SELECT  1
+            FROM   TB_ECAT_LANG_TRAN_M LANG
+            WHERE LANG.PROP = PROP_SET.PROP_ISO
+        )
+    </select>
+</mapper>

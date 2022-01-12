@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.eaction.framework.business.logic.staff.dao.StaffDao">
+
+	<!-- 스텝정보 리스트 갯수 취득 -->
+	<select id="selectStaffListCnt" resultType="int" parameterType="StaffSearchInfo">
+    	SELECT COUNT(1)
+    	  FROM MGMT_USER_INFO
+		  WHERE 1 = 1
+ 			<if test='search_name != null and search_name != ""'>
+				AND EMPNM LIKE CONCAT('%', #{search_name}, '%')
+			</if>
+			<if test='search_id != null and search_id != ""'>
+				AND EMP_ID LIKE CONCAT('%', #{search_id}, '%')
+			</if>
+			<!--
+			<if test='search_auth != null and search_auth != ""'>
+				AND USER_GROUP_ID = #{search_auth}
+			</if>
+			-->
+			<if test='search_status != null and search_status != ""'>
+				AND STATUS = #{search_status}
+			</if>
+			<if test='search_email != null and search_email != ""'>
+				AND EMAIL LIKE CONCAT('%', #{search_email}, '%')
+			</if>
+			<if test='search_smsphone != null and search_smsphone != ""'>
+				AND SMSPHONE LIKE CONCAT('%', #{search_smsphone}, '%')
+			</if>
+	</select> 
+
+	<!-- 스텝정보 리스트  취득 -->
+	<select id="selectStaffList" resultType="StaffInfo" parameterType="StaffSearchInfo">
+	    SELECT EMP_ID
+		     ,EMPNM EMPNM
+		     ,USER_GROUP_ID
+		     ,STATUS
+		     ,UPD_ID
+		     ,UPD_DT
+		     ,EMAIL
+		     ,SMSPHONE
+		 FROM (
+				SELECT EMP_ID
+				     ,EMPNM EMPNM
+				     ,USER_GROUP_ID
+				     ,STATUS
+				     ,UPD_ID
+				     ,UPD_DT
+				     ,EMAIL
+				     ,SMSPHONE
+				 FROM MGMT_USER_INFO
+				 WHERE 1 = 1
+					<if test='search_id != null and search_id != ""'>
+						AND EMP_ID LIKE CONCAT('%', #{search_id}, '%')
+					</if>
+					<if test='search_name != null and search_name != ""'>
+						AND EMPNM LIKE CONCAT('%', #{search_name}, '%')
+					</if>
+					<!--
+					<if test='search_auth != null and search_auth != ""'>
+						AND USER_GROUP_ID = #{search_auth}
+					</if>
+					  -->
+					<if test='search_status != null and search_status != ""'>
+						AND STATUS = #{search_status}
+					</if>
+					<if test='search_email != null and search_email != ""'>
+						AND EMAIL LIKE CONCAT('%', #{search_email}, '%')
+					</if>
+					<if test='search_smsphone != null and search_smsphone != ""'>
+						AND SMSPHONE LIKE CONCAT('%', #{search_smsphone}, '%')
+					</if>
+				ORDER BY UPD_DT DESC
+			) A
+		LIMIT #{startPageIndex} ,#{endPageIndex}		      
+	</select>
+
+	<!-- 스텝아이디 갯수 취득 -->	
+	<select id="selectStaffIdCnt" resultType="int" parameterType="StaffInfo">
+    	SELECT COUNT(1)
+    	  FROM MGMT_USER_INFO
+		  WHERE EMP_ID = #{emp_id}
+	</select>
+
+	<!-- 스텝정보 등록-->
+    <insert id="insertStaff" parameterType="StaffInfo">
+	 INSERT INTO MGMT_USER_INFO (
+                              EMP_ID
+						     ,EMPNM
+						     ,PASSWORD
+						     ,USER_GROUP_ID
+						     ,EMAIL
+						     ,SMSPHONE
+						     ,STATUS
+						     ,CRT_ID
+						     ,CRT_DT
+						     ,UPD_ID
+						     ,UPD_DT)
+        VALUES( 
+        		#{emp_id}
+               ,#{empnm}
+               ,#{password}
+               ,#{user_group_id}
+               ,#{email}
+               ,#{smsphone}
+               ,#{status}
+               ,#{crt_id}
+               ,now()
+               ,#{crt_id}
+               ,now() )
+	</insert>
+	
+	<!-- 스텝상세정보취득 -->
+	<select id="selectStaffDetail" resultType="StaffInfo" parameterType="StaffInfo">
+         SELECT EMP_ID
+		       ,EMPNM
+		       ,PASSWORD
+		       ,USER_GROUP_ID
+		       ,EMAIL
+		       ,SMSPHONE
+		       ,STATUS
+		       ,CRT_ID
+		       ,'' AS CRT_ID_NM
+		       ,CRT_DT
+		       ,UPD_ID
+		       ,'' AS UPD_ID_NM
+		       ,UPD_DT
+		 FROM MGMT_USER_INFO
+		 WHERE EMP_ID = #{emp_id}
+	</select>
+	
+	<!-- 스텝정보를 갱신 -->
+	<update id="updateStaff" parameterType="StaffInfo">
+		 UPDATE MGMT_USER_INFO
+		 	SET EMPNM = #{empnm}
+		 		<if test = 'password != null and password != ""'>
+		 		,PASSWORD = #{password}
+		 		</if>
+		 		,EMAIL = #{email}
+		 		,SMSPHONE = #{smsphone}
+		    	,USER_GROUP_ID = #{user_group_id}
+		    	,STATUS = #{status}
+		    	,UPD_ID = #{crt_id}
+		    	,UPD_DT = now()
+		  WHERE EMP_ID = #{emp_id}
+	</update>
+	
+	<!-- Staff 아이디 존재(중복) 체크 -->
+	<select id="selectDuplicateStaffIdCnt" resultType="String" parameterType="String">
+		SELECT  '1'
+		FROM DUAL
+		WHERE EXISTS (SELECT 1
+					  FROM MGMT_USER_INFO K
+			          WHERE K.EMP_ID = #{userId})
+	</select>
+</mapper>

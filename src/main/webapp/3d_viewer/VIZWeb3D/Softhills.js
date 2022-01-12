@@ -1,0 +1,1 @@
+define(['VIZWeb3D/VIZWeb3D','VIZWeb3D/Enum'],function(a){function b(e){var f=this;core=new a(e),this['VIZCore']=core;}b['prototype']={'Constructor':b,'VIZCore':null,'Init':function(){core['Init'](),this['VIZCore']=core,c();}};function c(){requestAnimationFrame(c),core['Animate']();}var d=function(e){core['Init'](e),this['VIZCore']=core,c();};return b;});

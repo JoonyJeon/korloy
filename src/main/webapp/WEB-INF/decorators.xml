@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<decorators defaultdir="/WEB-INF/jsp/common/decorators">
+
+<!-- 
+	//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+	//Url에 .pop으로 해야만 decorator에서 지정한 팝업으로 감. 
+	//전부 소문자 추천. 
+	//decorator에 exclude pattern 미사용
+	//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+ -->
+
+	<decorator name="main" page="main.jsp">
+		<pattern>*.do</pattern>
+	</decorator>
+	<decorator name="panel" page="panel.jsp"/>
+    <!-- 팝업화면처리 -->
+    <decorator name="modaless" page="popup.jsp">
+         <pattern>/*.pop</pattern>
+    </decorator>	    
+</decorators>
