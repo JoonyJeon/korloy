@@ -634,6 +634,8 @@ select option{color: #000;}
 }
 .mainapp_list .swiper-slide a:hover .img:after{content: '';border: 1px solid #0094da;position: absolute;left: 0;top: 0;right: 0;bottom: 0;}
 .mainapp_list .swiper-slide a:hover span{color: #0094da;}
+.main .btn_prev{background: url(../img/slide_prev.png) no-repeat left center;width: 52px;height: 52px;text-indent: -999px;overflow: hidden;position: absolute;left: -25px;top: 45%;z-index: 10;transform:translate(0, -50%);}
+.main .btn_next{background: url(../img/slide_next.png) no-repeat right center;width: 52px;height: 52px;text-indent: -999px;overflow: hidden;position: absolute;right: -25px;top: 45%;z-index: 10;transform:translate(0, -50%);}
 .sub .btn_prev{background: url(../img/slide_prev.png) no-repeat left center;width: 52px;height: 52px;text-indent: -999px;overflow: hidden;position: absolute;left: -25px;top: 50%;z-index: 10;transform:translate(0, -50%);}
 .sub .btn_next{background: url(../img/slide_next.png) no-repeat right center;width: 52px;height: 52px;text-indent: -999px;overflow: hidden;position: absolute;right: -25px;top: 50%;z-index: 10;transform:translate(0, -50%);}
 .sub .more{background: #f5f5f5;border: 1px solid #ccc;padding: 15px 20px;margin-top: 20px; display:block; height:auto; overflow:hidden;}
@@ -645,6 +647,8 @@ select option{color: #000;}
 .sub .more.single {text-align:center;}
 .sub .more.single a {float:none; width:100%;}
 /* .sub .more a{display: inline-block;font-size: 14px;color: #000;background: url(../img/bg_select03.png) no-repeat right center;padding:0 20px; margin:0 5px;} */
+.main .sub_applist .btn_prev{margin-top: 20px;}
+.main .sub_applist .btn_next{margin-top: 20px;}
 .sub .sub_applist .btn_prev{margin-top: 20px;}
 .sub .sub_applist .btn_next{margin-top: 20px;}
 .sub_applist{position: relative;}
@@ -1458,6 +1462,8 @@ a.dxf{color: #8597a0;border-color: #8597a0;background-image: url(../img/bg_dxf.p
     #container .inner{margin: 0 15px;}
     #header .inner{margin: 0 15px;}
     #footer .inner{margin: 0 15px;}
+    .main .btn_prev{left: -15px;}
+    .main .btn_next{right: -15px;}
     .sub .btn_prev{left: -15px;}
     .sub .btn_next{right: -15px;}
     .listview .view_top .tit{font-size: 14px;}
