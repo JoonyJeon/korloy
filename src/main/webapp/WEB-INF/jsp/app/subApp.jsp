@@ -127,14 +127,14 @@ for(AppInfo mainInfo : main_app_list) {
 	                           if(sub_app_list != null && sub_app_list.size() > 0) {
 	                                for(AppInfo subInfo : sub_app_list) {
 	                        %>
-	                            <li><a onclick="javascript:goItemGroupList(this);" data-sacd="<%=subInfo.getSa_cd()%>" data-sanm="<%=subInfo.getSa_nm()%>">
+	                            <li><a onclick="javascript:goItemGroupList(this);" data-sacd="<%=subInfo.getSa_cd()%>" data-sanm="<%=subInfo.getSa_nm()%>" title ="<%=subInfo.getSa_nm()%>">
                                         <div class="top">
                                             <div class="num"><%=StringUtil.toComma(subInfo.getSub_cnt())%></div>
                                         </div>
 	                                    <div class="img" >
-	                                        <img src="<%=UPLOAD_ROOT_PATH %><%=subInfo.getMain_img()%>" alt="<%=subInfo.getSa_nm()%>" onerror="onErrorImage(this)">
+	                                        <img src="<%=UPLOAD_ROOT_PATH %><%=subInfo.getMain_img()%>" alt="<%=subInfo.getSa_nm()%>" onerror="onErrorImage(this)" title ="<%=subInfo.getSa_nm()%>">
 	                                    </div>
-	                                    <div class="txt" ><p style="text-overflow:ellipsis;overflow:hidden;white-space: nowrap;" data-lang="<%=subInfo.getSa_cd()%>"><%=subInfo.getSa_nm()%></p></div>
+	                                    <div class="txt" ><p style="text-overflow:ellipsis;overflow:hidden;white-space: nowrap;" data-lang="<%=subInfo.getSa_cd()%>" title ="<%=subInfo.getSa_nm()%>"><%=subInfo.getSa_nm()%></p></div>
 	                            </a></li>
 	                        <%    } %>
 	                        <%} %>
@@ -149,15 +149,15 @@ for(AppInfo mainInfo : main_app_list) {
 							    for (AppInfo subInfo : sub_app_list) {
 							%>
 							<li>
-								<a onclick="javascript:goItemGroupList(this);" data-sacd="<%=subInfo.getSa_cd()%>" data-sanm="<%=subInfo.getSa_nm()%>">
+								<a onclick="javascript:goItemGroupList(this);" data-sacd="<%=subInfo.getSa_cd()%>" data-sanm="<%=subInfo.getSa_nm()%>" title ="<%=subInfo.getSa_nm()%>">
 									<div class="top">
-									   <div class="num"><%=StringUtil.toComma(subInfo.getSub_cnt())%></div>
+									   <div class="num" title ="<%=subInfo.getSa_nm()%>"><%=StringUtil.toComma(subInfo.getSub_cnt())%></div>
 									</div>
 									<div class="img" >
-									   <img src="<%=UPLOAD_ROOT_PATH%><%=subInfo.getMain_img()%>" onerror="onErrorImage(this)" >
+									   <img src="<%=UPLOAD_ROOT_PATH%><%=subInfo.getMain_img()%>" onerror="onErrorImage(this)" title ="<%=subInfo.getSa_nm()%>">
 									</div>
 									<div class="txt">
-									   <p data-lang="<%=subInfo.getSa_cd()%>" datalangsize="20" style="text-overflow:ellipsis;overflow:hidden;white-space: nowrap;"><%=subInfo.getSa_nm()%></p>
+									   <p data-lang="<%=subInfo.getSa_cd()%>" datalangsize="20" style="text-overflow:ellipsis;overflow:hidden;white-space: nowrap;" title ="<%=subInfo.getSa_nm()%>"><%=subInfo.getSa_nm()%></p>
 									</div>
 								</a>
 							</li>
@@ -191,11 +191,11 @@ for(AppInfo mainInfo : main_app_list) {
                                     if (sub_app_list != null && sub_app_list.size() > 0) {
                                         for (AppInfo subInfo : sub_app_list) {
                                     %>
-                                    <tr onclick="javascript:goItemGroupList(this);" data-sacd="<%=subInfo.getSa_cd()%>" data-sanm="<%=subInfo.getSa_nm()%>" style="cursor:pointer">
+                                    <tr onclick="javascript:goItemGroupList(this);" data-sacd="<%=subInfo.getSa_cd()%>" data-sanm="<%=subInfo.getSa_nm()%>" style="cursor:pointer" title ="<%=subInfo.getSa_nm()%>">
                                         <td class="left" data-lang="<%=subInfo.getSa_cd()%>"><%=subInfo.getSa_nm()%> </td>
                                         <td class="center" ><%=StringUtil.toComma(subInfo.getSub_cnt())%></td>
                                         <td>
-                                            <div class="img_view"><img src="<%=UPLOAD_ROOT_PATH%><%=subInfo.getMain_img()%>" onerror="onErrorImage(this);" style="width:50px"></div>
+                                            <div class="img_view"><img src="<%=UPLOAD_ROOT_PATH%><%=subInfo.getMain_img()%>" onerror="onErrorImage(this);" style="width:50px" title ="<%=subInfo.getSa_nm()%>"></div>
                                         </td>
                                     </tr>
                                     <%
@@ -214,14 +214,14 @@ for(AppInfo mainInfo : main_app_list) {
                                if(sub_app_list != null && sub_app_list.size() > 0) {
                                     for(AppInfo subInfo : sub_app_list) {
                             %>
-                                <li ><a onclick="javascript:goItemGroupList(this);" data-sacd="<%=subInfo.getSa_cd()%>" data-sanm="<%=subInfo.getSa_nm()%>">
-                                        <div class="top">
+                                <li ><a onclick="javascript:goItemGroupList(this);" data-sacd="<%=subInfo.getSa_cd()%>" data-sanm="<%=subInfo.getSa_nm()%>"title ="<%=subInfo.getSa_nm()%>">
+                                        <div class="top" title ="<%=subInfo.getSa_nm()%>">
                                             <div class="num"><%=StringUtil.toComma(subInfo.getSub_cnt())%></div>
                                         </div>
-                                        <div class="img" style="width:100px;margin:10px 10px 10px 30px;">
+                                        <div class="img" style="width:100px;margin:10px 10px 10px 30px;" title ="<%=subInfo.getSa_nm()%>">
                                             <img src="<%=UPLOAD_ROOT_PATH %><%=subInfo.getMain_img()%>" alt="<%=subInfo.getSa_nm()%>" style="width:80%" onerror="onErrorImage(this);onErrorImageMSize(this);">
                                         </div>
-                                        <div class="txt" data-lang="<%=subInfo.getSa_cd()%>" data-langsize="10" style="text-overflow:ellipsis;overflow:hidden;white-space: nowrap;"><%=subInfo.getSa_nm()%></div>
+                                        <div class="txt" data-lang="<%=subInfo.getSa_cd()%>" data-langsize="10" style="text-overflow:ellipsis;overflow:hidden;white-space: nowrap;" title ="<%=subInfo.getSa_nm()%>"><%=subInfo.getSa_nm()%></div>
                                 </a></li>
                             <%    } %>
                             <%} %>
@@ -380,14 +380,14 @@ function getList(param, isRemove){
                 var sa_nm = data.sa_nm;
                 var sub_cnt = data.sub_cnt;
                 var img_url = "<%=UPLOAD_ROOT_PATH %>"+data.main_img;
-                content =  content + '<li><a href="#" onclick="javascript:goItemGroupList(this);" data-sacd="'+sa_cd+'" data-sanm="'+sa_nm+'">'+
+                content =  content + '<li><a href="#" onclick="javascript:goItemGroupList(this);" data-sacd="'+sa_cd+'" data-sanm="'+sa_nm+'" title="'+sa_nm+'">'+
                 '<div class="top">' +
                 '<div class="num">'+addCommas(sub_cnt)+'</div>'+
                 '</div>'+
                 '<div class="img" >'+
-                '<img src="'+img_url+'" alt="'+toTruncate(sa_nm, 30, "...")+'" onerror="onErrorImage(this)" />'+
+                '<img src="'+img_url+'" title="'+sa_nm+'" alt="'+toTruncate(sa_nm, 30, "...")+'" onerror="onErrorImage(this)" />'+
                 '</div>'+
-                '<div class="txt"><p style="text-overflow:ellipsis;overflow:hidden;white-space: nowrap;" data-lang="'+sa_cd+'">'+sa_nm+'</span></p></div>'+
+                '<div class="txt"><p style="text-overflow:ellipsis;overflow:hidden;white-space: nowrap;" data-lang="'+sa_cd+'" title="'+sa_nm+'">'+sa_nm+'</span></p></div>'+
                 '</a></li>';
 
                 content2 =  content2 + '<li>'+

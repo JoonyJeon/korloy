@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- DAO 구현체 자동생성을 위한 DAO 인터페이스 정의 -->
+<mapper namespace="com.eaction.framework.business.logic.grade.dao.GradeDao">
+
+	<!-- Grade 검색조건 조회 -->
+	<select id="selectSearchConditionList" resultType="CodeInfo">
+		SELECT  CODE.CODE_KEY 		AS CODE
+				,CODE.CODE_VAL 		AS NAME
+				,CODE.PARENT_KEY 	AS UPCODE	
+		FROM TB_ECAT_CODE CODE
+		WHERE CODE.USE_YN = 'Y'
+		  AND CODE.PARENT_KEY IN( 'CM0004', 'CM0009','CM0008')
+		UNION 
+		SELECT MAIN.MA_CD 			AS CODE
+			   ,MAIN.MA_NM			AS NAME
+			   ,''					AS UPCODE
+		FROM TB_ECAT_CONT_MA MAIN 
+		WHERE MAIN.USE_YN = 'Y'
+	</select>
+	
+	<!-- Grade 검색결과 목록 개수 -->
+	<select id="selectGradeListCnt" resultType="int" parameterType="GradeInfo">
+		SELECT COUNT(1)
+		FROM (SELECT * , ROW_NUMBER() OVER (ORDER BY SUBST ASC) AS RN 
+		      FROM ( SELECT EG.MA_CD, 
+		                     ECM.MA_NM, 
+		                     EG.TIPS_CD, 
+		                     EC.CODE_VAL AS TIPS_CD_NM,
+		                     <!-- /* Grade 국내 및 ISO */  -->
+		                     CASE WHEN GRADE_KOR IS NOT NULL AND GRADE_ISO IS NOT NULL AND (SELECT NATION_CD FROM TB_ECAT_NATION NATION WHERE NATION.NATION_CD = #{nation}) = 'KOR' THEN GRADE_KOR
+		                          WHEN GRADE_KOR IS NOT NULL AND GRADE_ISO IS NOT NULL AND (SELECT NATION_CD FROM TB_ECAT_NATION NATION WHERE NATION.NATION_CD = #{nation}) != 'KOR' THEN GRADE_ISO 
+		                          WHEN GRADE_KOR IS NOT NULL AND GRADE_ISO IS NULL THEN GRADE_KOR 
+		                          WHEN GRADE_KOR IS NULL AND GRADE_ISO IS NOT NULL THEN GRADE_ISO ELSE '' 
+		                          END GRADE, 
+		                     <!--     /* Steel Min-Max */  -->
+		                     CASE WHEN P_MIN IS NOT NULL AND P_MAX IS NOT NULL THEN CONCAT(P_MIN,'-',P_MAX) 
+		                          WHEN P_MIN IS NOT NULL AND P_MAX IS NULL THEN P_MIN 
+		                          WHEN P_MIN IS NULL AND P_MAX IS NOT NULL THEN P_MAX 
+		                          ELSE '' END ISO_P, 
+		                     <!-- /* Stainless Steel Min-Max */  -->
+		                     CASE WHEN M_MIN IS NOT NULL AND M_MAX IS NOT NULL THEN CONCAT(M_MIN,'-',M_MAX) 
+		                          WHEN M_MIN IS NOT NULL AND M_MAX IS NULL THEN M_MIN 
+		                          WHEN M_MIN IS NULL AND M_MAX IS NOT NULL THEN M_MAX 
+		                          ELSE '' END ISO_M, 
+		                     <!-- /* Cast iron Min-Max */ --> 
+		                     CASE WHEN K_MIN IS NOT NULL AND K_MAX IS NOT NULL THEN CONCAT(K_MIN,'-',K_MAX) 
+		                          WHEN K_MIN IS NOT NULL AND K_MAX IS NULL THEN K_MIN 
+		                          WHEN K_MIN IS NULL AND K_MAX IS NOT NULL THEN K_MAX 
+		                          ELSE '' END ISO_K, 
+		                     <!-- /* Non-ferrous metal Min-Max */  -->
+		                     CASE WHEN N_MIN IS NOT NULL AND N_MAX IS NOT NULL THEN CONCAT(N_MIN,'-',N_MAX) 
+		                          WHEN N_MIN IS NOT NULL AND N_MAX IS NULL THEN N_MIN 
+		                          WHEN N_MIN IS NULL AND N_MAX IS NOT NULL THEN N_MAX 
+		                          ELSE '' END ISO_N, 
+		                     <!-- /* Heat resistant alloy Min-Max */  -->
+		                     CASE WHEN S_MIN IS NOT NULL AND S_MAX IS NOT NULL THEN CONCAT(S_MIN,'-',S_MAX) 
+		                          WHEN S_MIN IS NOT NULL AND S_MAX IS NULL THEN S_MIN 
+		                          WHEN S_MIN IS NULL AND S_MAX IS NOT NULL THEN S_MAX 
+		                          ELSE '' END ISO_S, 
+		                     <!-- /* High hardness steel Min-Max */  -->
+		                     CASE WHEN H_MIN IS NOT NULL AND H_MAX IS NOT NULL THEN CONCAT(H_MIN,'-',H_MAX) 
+		                          WHEN H_MIN IS NOT NULL AND H_MAX IS NULL THEN H_MIN 
+		                          WHEN H_MIN IS NULL AND H_MAX IS NOT NULL THEN H_MAX 
+		                          ELSE '' END ISO_H, 
+		                     <!-- /* Non ISO Min-Max */ --> 
+		                     CASE WHEN O_MIN IS NOT NULL AND O_MAX IS NOT NULL THEN CONCAT(O_MIN,'-',O_MAX) 
+		                          WHEN O_MIN IS NOT NULL AND O_MAX IS NULL THEN O_MIN 
+		                          WHEN O_MIN IS NULL AND O_MAX IS NOT NULL THEN O_MAX 
+		                          ELSE '' END ISO_O, 
+		                     EG.GRADE_CLAS, <!-- /* Grade Classification */  -->
+		                     EG.COAT_LAY, <!-- /* Coating Layer */ --> 
+		                     EG.COAT, <!-- /* Coating */  -->
+		                     EG.SUBST, <!-- /* Substrate(기질) */  -->
+		                     EG.ISO_RAG
+		                     FROM TB_ECAT_GRADE EG WITH(NOLOCK) 
+		                     LEFT OUTER JOIN TB_ECAT_CONT_MA ECM WITH(NOLOCK) 
+		                     ON EG.MA_CD = ECM.MA_CD 
+		                     LEFT OUTER JOIN TB_ECAT_CODE EC WITH(NOLOCK) 
+		                     ON EG.TIPS_CD = EC.CODE_KEY 
+		               WHERE EG.WERKS = '1000' 
+		               AND EG.USE_YN = 'Y' 
+				        <!-- /* Main Application Code */ -->
+					    <if test='ma_cd_arr != null and ma_cd_arr.length !=0'>
+					      AND EG.MA_CD IN 
+				           	<foreach collection="ma_cd_arr" item="state" index="index" separator="," open="(" close=")">
+							     #{state}
+				           	</foreach>
+					    </if>		
+						<!-- /* TMC1ISO */ -->
+						<if test='iso_rag_arr != null and iso_rag_arr.length != 0'>
+				          AND(
+							<foreach collection="iso_rag_arr" item="state" index="index" separator="OR">
+				          		EG.ISO_RAG LIKE '%${state}%'
+					        </foreach>
+				          	) 
+						</if>
+						
+						<!-- /* Grade Classification */ -->
+					  	<if test='grade_clas_arr != null and grade_clas_arr.length !=0'>
+					      AND (
+				           	<foreach collection="grade_clas_arr" item="state" index="index" separator="OR">
+								EG.GRADE_CLAS LIKE '%${state}%'
+				           	</foreach>
+						  )
+					    </if>
+					    
+					   <!-- /* Substrate */ -->
+					   <if test='subst_arr != null and subst_arr.length !=0'>
+					      AND EG.SUBST IN 
+				           	<foreach collection="subst_arr" item="state" index="index" separator="," open="(" close=")">
+								#{state}
+				           	</foreach>
+					    </if>
+<!-- 					    /* Grade(국내,해외) */ -->
+						<if test="grade != null and grade != ''">
+				          AND (EG.GRADE_KOR LIKE '%${grade}%' OR EG.GRADE_ISO LIKE '%${grade}%' ) 
+						</if>		
+		               ) AS TMP 
+		      ) AS LST 
+	</select>
+	
+	<!-- Grade 검색결과 목록 조회 -->
+	<select id="selectGradeList" resultType="GradeInfo" parameterType="GradeInfo">
+	 SELECT EG.MA_CD, <!-- /* Main Application 코드 */  -->
+		                     ECM.MA_NM, <!-- /* Main Application 명칭 */  -->
+		                     EG.TIPS_CD, <!-- /* Tipped tool 코드 */  -->
+		                     EC.CODE_VAL AS TIPS_CD_NM,<!--  /* Tipped tool 명칭 */  -->
+		                     <!-- /* Grade 국내 및 ISO */  -->
+		                     CASE WHEN GRADE_KOR IS NOT NULL AND GRADE_ISO IS NOT NULL AND (SELECT NATION_CD FROM TB_ECAT_NATION NATION WHERE NATION.NATION_CD = #{nation}) = 'KOR' THEN GRADE_KOR
+		                          WHEN GRADE_KOR IS NOT NULL AND GRADE_ISO IS NOT NULL AND (SELECT NATION_CD FROM TB_ECAT_NATION NATION WHERE NATION.NATION_CD = #{nation}) != 'KOR' THEN GRADE_ISO 
+		                          WHEN GRADE_KOR IS NOT NULL AND GRADE_ISO IS NULL THEN GRADE_KOR 
+		                          WHEN GRADE_KOR IS NULL AND GRADE_ISO IS NOT NULL THEN GRADE_ISO ELSE '' 
+		                          END GRADE, 
+		                     <!--     /* Steel Min-Max */  -->
+		                     CASE WHEN P_MIN IS NOT NULL AND P_MAX IS NOT NULL THEN CONCAT(P_MIN,'-',P_MAX) 
+		                          WHEN P_MIN IS NOT NULL AND P_MAX IS NULL THEN P_MIN 
+		                          WHEN P_MIN IS NULL AND P_MAX IS NOT NULL THEN P_MAX 
+		                          ELSE '' END ISO_P, 
+		                     <!-- /* Stainless Steel Min-Max */  -->
+		                     CASE WHEN M_MIN IS NOT NULL AND M_MAX IS NOT NULL THEN CONCAT(M_MIN,'-',M_MAX) 
+		                          WHEN M_MIN IS NOT NULL AND M_MAX IS NULL THEN M_MIN 
+		                          WHEN M_MIN IS NULL AND M_MAX IS NOT NULL THEN M_MAX 
+		                          ELSE '' END ISO_M, 
+		                     <!-- /* Cast iron Min-Max */ --> 
+		                     CASE WHEN K_MIN IS NOT NULL AND K_MAX IS NOT NULL THEN CONCAT(K_MIN,'-',K_MAX) 
+		                          WHEN K_MIN IS NOT NULL AND K_MAX IS NULL THEN K_MIN 
+		                          WHEN K_MIN IS NULL AND K_MAX IS NOT NULL THEN K_MAX 
+		                          ELSE '' END ISO_K, 
+		                     <!-- /* Non-ferrous metal Min-Max */  -->
+		                     CASE WHEN N_MIN IS NOT NULL AND N_MAX IS NOT NULL THEN CONCAT(N_MIN,'-',N_MAX) 
+		                          WHEN N_MIN IS NOT NULL AND N_MAX IS NULL THEN N_MIN 
+		                          WHEN N_MIN IS NULL AND N_MAX IS NOT NULL THEN N_MAX 
+		                          ELSE '' END ISO_N, 
+		                     <!-- /* Heat resistant alloy Min-Max */  -->
+		                     CASE WHEN S_MIN IS NOT NULL AND S_MAX IS NOT NULL THEN CONCAT(S_MIN,'-',S_MAX) 
+		                          WHEN S_MIN IS NOT NULL AND S_MAX IS NULL THEN S_MIN 
+		                          WHEN S_MIN IS NULL AND S_MAX IS NOT NULL THEN S_MAX 
+		                          ELSE '' END ISO_S, 
+		                     <!-- /* High hardness steel Min-Max */  -->
+		                     CASE WHEN H_MIN IS NOT NULL AND H_MAX IS NOT NULL THEN CONCAT(H_MIN,'-',H_MAX) 
+		                          WHEN H_MIN IS NOT NULL AND H_MAX IS NULL THEN H_MIN 
+		                          WHEN H_MIN IS NULL AND H_MAX IS NOT NULL THEN H_MAX 
+		                          ELSE '' END ISO_H, 
+		                     <!-- /* Non ISO Min-Max */ --> 
+		                     CASE WHEN O_MIN IS NOT NULL AND O_MAX IS NOT NULL THEN CONCAT(O_MIN,'-',O_MAX) 
+		                          WHEN O_MIN IS NOT NULL AND O_MAX IS NULL THEN O_MIN 
+		                          WHEN O_MIN IS NULL AND O_MAX IS NOT NULL THEN O_MAX 
+		                          ELSE '' END ISO_O, 
+		                     EG.GRADE_CLAS, <!-- /* Grade Classification */  -->
+		                     EG.COAT_LAY, <!-- /* Coating Layer */ --> 
+		                     EG.COAT, <!-- /* Coating */  -->
+		                     EG.SUBST, <!-- /* Substrate(기질) */  -->
+		                     EG.ISO_RAG,
+		                     EG.GRADE_DESC
+<!-- 		                     EG.ORD  -->
+		                     FROM TB_ECAT_GRADE EG WITH(NOLOCK) 
+		                     LEFT OUTER JOIN TB_ECAT_CONT_MA ECM WITH(NOLOCK) 
+		                     ON EG.MA_CD = ECM.MA_CD 
+		                     LEFT OUTER JOIN TB_ECAT_CODE EC WITH(NOLOCK) 
+		                     ON EG.TIPS_CD = EC.CODE_KEY 
+		               WHERE EG.WERKS = '1000' 
+		               AND EG.USE_YN = 'Y' 
+				        <!-- /* Main Application Code */ -->
+					    <if test='ma_cd_arr != null and ma_cd_arr.length !=0'>
+					      AND EG.MA_CD IN 
+				           	<foreach collection="ma_cd_arr" item="state" index="index" separator="," open="(" close=")">
+							     #{state}
+				           	</foreach>
+					    </if>		
+						
+						<!-- /* TMC1ISO */ -->
+						<if test='iso_rag_arr != null and iso_rag_arr.length != 0'>
+				          AND(
+							<foreach collection="iso_rag_arr" item="state" index="index" separator="OR">
+				          		EG.ISO_RAG LIKE '%${state}%'
+					        </foreach>
+				          	) 
+						</if>
+						
+						<!-- /* Grade Classification */ -->
+					  	<if test='grade_clas_arr != null and grade_clas_arr.length !=0'>
+					      AND (
+				           	<foreach collection="grade_clas_arr" item="state" index="index" separator="OR">
+								EG.GRADE_CLAS LIKE '%${state}%'
+				           	</foreach>
+						  )
+					    </if>
+					    
+					   <!-- /* Substrate */ -->
+					   <if test='subst_arr != null and subst_arr.length !=0'>
+					      AND EG.SUBST IN 
+				           	<foreach collection="subst_arr" item="state" index="index" separator="," open="(" close=")">
+								#{state}
+				           	</foreach>
+					    </if>
+					    <!-- 					    /* Grade(국내,해외) */ -->
+						<if test="grade != null and grade != ''">
+				           AND (EG.GRADE_KOR LIKE '%${grade}%' OR EG.GRADE_ISO LIKE '%${grade}%' ) 
+						</if>	
+		   
+		<!-- WHERE RN BETWEEN 0 AND 100  ORDER BY RN --> 
+<!-- 		ORDER BY LST.MA_CD, LST.ORD -->
+		ORDER BY EG.MA_CD, EG.ORD
+		<if test='isPageYn != "" and isPageYn =="Y"'>
+			OFFSET #{startIndex} ROWS
+			FETCH NEXT #{pageCount} ROWS ONLY
+		</if>
+	</select>
+	<!-- 재종 상세 내용 -->
+	<select id="selectGradeDetail" parameterType="GradeInfo" resultType="GradeInfo">
+		SELECT  DISTINCT  CASE WHEN GRADE_KOR IS NOT NULL AND GRADE_ISO IS NOT NULL AND (SELECT NATION_CD FROM TB_ECAT_NATION NATION WHERE NATION.NATION_CD = #{nation}) = 'KOR' THEN GRADE_KOR
+						       WHEN GRADE_KOR IS NOT NULL AND GRADE_ISO IS NOT NULL AND (SELECT NATION_CD FROM TB_ECAT_NATION NATION WHERE NATION.NATION_CD = #{nation}) != 'KOR' THEN GRADE_ISO 
+						       WHEN GRADE_KOR IS NOT NULL AND GRADE_ISO IS NULL THEN GRADE_KOR 
+						       WHEN GRADE_KOR IS NULL AND GRADE_ISO IS NOT NULL THEN GRADE_ISO ELSE '' 
+						       END GRADE
+					 ,EG.GRADE_DESC 
+				     ,EG.ISO_RAG
+					 ,EG.COAT_LAY 
+				     ,EG.COAT 
+				     ,CASE WHEN P_MIN IS NOT NULL AND P_MAX IS NOT NULL THEN CONCAT(P_MIN,'-',P_MAX) 
+				          WHEN P_MIN IS NOT NULL AND P_MAX IS NULL THEN P_MIN 
+				          WHEN P_MIN IS NULL AND P_MAX IS NOT NULL THEN P_MAX 
+				          ELSE '' END ISO_P
+				     ,CASE WHEN M_MIN IS NOT NULL AND M_MAX IS NOT NULL THEN CONCAT(M_MIN,'-',M_MAX) 
+				          WHEN M_MIN IS NOT NULL AND M_MAX IS NULL THEN M_MIN 
+				          WHEN M_MIN IS NULL AND M_MAX IS NOT NULL THEN M_MAX 
+				          ELSE '' END ISO_M
+				     ,CASE WHEN K_MIN IS NOT NULL AND K_MAX IS NOT NULL THEN CONCAT(K_MIN,'-',K_MAX) 
+				          WHEN K_MIN IS NOT NULL AND K_MAX IS NULL THEN K_MIN 
+				          WHEN K_MIN IS NULL AND K_MAX IS NOT NULL THEN K_MAX 
+				          ELSE '' END ISO_K
+				     ,CASE WHEN N_MIN IS NOT NULL AND N_MAX IS NOT NULL THEN CONCAT(N_MIN,'-',N_MAX) 
+				          WHEN N_MIN IS NOT NULL AND N_MAX IS NULL THEN N_MIN 
+				          WHEN N_MIN IS NULL AND N_MAX IS NOT NULL THEN N_MAX 
+				          ELSE '' END ISO_N
+				     ,CASE WHEN S_MIN IS NOT NULL AND S_MAX IS NOT NULL THEN CONCAT(S_MIN,'-',S_MAX) 
+				          WHEN S_MIN IS NOT NULL AND S_MAX IS NULL THEN S_MIN 
+				          WHEN S_MIN IS NULL AND S_MAX IS NOT NULL THEN S_MAX 
+				          ELSE '' END ISO_S
+				     ,CASE WHEN H_MIN IS NOT NULL AND H_MAX IS NOT NULL THEN CONCAT(H_MIN,'-',H_MAX) 
+				          WHEN H_MIN IS NOT NULL AND H_MAX IS NULL THEN H_MIN 
+				          WHEN H_MIN IS NULL AND H_MAX IS NOT NULL THEN H_MAX 
+				          ELSE '' END ISO_H
+		FROM 		TB_ECAT_GRADE EG WITH(NOLOCK)
+		LEFT OUTER JOIN TB_ECAT_CONT_MA ECM WITH(NOLOCK) 
+		ON EG.MA_CD = ECM.MA_CD 
+		WHERE 	EG.WERKS = '1000'	
+		  AND	EG.MA_CD = #{ma_cd}
+		  AND 	EG.USE_YN = 'Y' 
+		<!-- 					    /* Grade(국내,해외) */ -->
+		<if test="grade != null and grade != ''">
+           AND (EG.GRADE_KOR LIKE '%${grade}%' OR EG.GRADE_ISO LIKE '%${grade}%' ) 
+		</if>
+	</select>
+</mapper>

@@ -185,7 +185,7 @@
 	                        	<%-- Reset --%>
 	                        	<%=LangMng.LANG_D("FR000060", session_lang) %>
 	                        </a>
-	                        <a href="javascript:void(0);" id="allCancel" onclick="onCancelSelect('cancel')"class="cancel" data-lang="FR000264">
+	                        <a href="javascript:void(0);" id="cancel" onclick="onCancelSelect('cancel')"class="cancel" data-lang="FR000264">
 	                        	<%-- cancel --%>
 	                        	<%=LangMng.LANG_D("FR000264", session_lang) %>
 	                        </a>

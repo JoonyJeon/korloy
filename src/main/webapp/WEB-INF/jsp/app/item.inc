@@ -1,4 +1,4 @@
-﻿<%----------------------------------------------------------------------------------------
+﻿  <%----------------------------------------------------------------------------------------
  - 파일이름	: item.inc
  - 설    명		: itemList > item 화면
  - 추가내용   	:   
@@ -1264,7 +1264,7 @@ function createItemListTable(){
 			//order number
 			rowHtml += '<td onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;">' + itemList[k].MATNR + '</td>';  // Default :  Order Number 
 			// 자재내역 
-			rowHtml += '<td class="left"onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;">'  + itemList[k].DESIGNATION; +'</td></tr>'
+			rowHtml += '<td class="ellipsis"onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;" title ="' + itemList[k].DESIGNATION + '">'  + itemList[k].DESIGNATION; +'</td></tr>'
 			colGroupHtml += rowHtml; 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++아이템 리스트 PC  E
 		}// end of inch y for
@@ -1275,8 +1275,8 @@ function createItemListTable(){
 			if(itemList[k].UNIT_CD !='CC0002'){
 				var rowHtml = '<tr>';
 				rowHtml += '<td style="cursor:pointer;"><a onclick="javascript:goItemCart(this);" data-matnr="' + itemList[k].MATNR + '" class="bnt_cart" data-evtcd="EC0017"><img src="' +  cartImgUrl + '" alt=""></a></td>'
-				rowHtml += '<td onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer;">' + itemList[k].MATNR + '</td>';  // Default :  Order Number 
-				rowHtml += '<td class="left">' + itemList[k].DESIGNATION +'</td></tr>';			
+				rowHtml += '<td onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;">' + itemList[k].MATNR + '</td>';  // Default :  Order Number 
+				rowHtml += '<td class="ellipsis"onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;" title ="' + itemList[k].DESIGNATION + '">'  + itemList[k].DESIGNATION; +'</td></tr>'
 				colGroupHtml += rowHtml; 
 			}
 		}
@@ -4328,15 +4328,12 @@ function createSparePartsTable(sparePartsList){
 					rowHtml += '<td><a onclick="javascript:goItemCart(this);" data-matnr="' + sparePartsList[k].bom_matnr + '" class="bnt_cart" style="cursor:pointer;" data-evtcd="EC0032"><img src="' +  cartImgUrl + '" alt=""></a></td>';  // Cart
 					if(devType =='P'){
 						rowHtml += '<td onclick="showItemDetailPop('+matnr+', '+evtCd+' )"><a>' + sparePartsList[k].bom_matnr + '</a></td>';  // Order Number 
+						rowHtml += '<td class="left" onclick="showItemDetailPop('+matnr+', '+evtCd+' )"><a>' + sparePartsList[k].idnrk_hyung + '</a></td>';  // Designation
 					}else{
 						rowHtml += '<td>' + sparePartsList[k].bom_matnr + '</td>';  // Order Number 
+						rowHtml += '<td class="left">' + sparePartsList[k].idnrk_hyung + '</td>';  // Designation
 					}
-					if(devType =='P'){
-					rowHtml += '<td class="left" onclick="showItemDetailPop('+matnr+', '+evtCd+' )"><a>' + sparePartsList[k].idnrk_hyung + '</a></td>';  // Designation
-					}
-					else{
-					rowHtml += '<td class="left">' + sparePartsList[k].idnrk_hyung + '</td>';  // Designation
-					}
+				
 					
 					rowHtml += '<td>' + sparePartsList[k].meins + '</td>';  // 단위
 					rowHtml += '<td class="right">' + sparePartsList[k].menge + '</td>';  // 수량
@@ -4356,16 +4353,13 @@ function createSparePartsTable(sparePartsList){
 						rowHtml += '<td><a onclick="javascript:goItemCart(this);" data-matnr="' + sparePartsList[k].bom_matnr + '" class="bnt_cart" style="cursor:pointer;" data-evtcd="EC0032"><img src="' +  cartImgUrl + '" alt=""></a></td>';  // Cart
 						if(devType =='P'){
 							rowHtml += '<td onclick="showItemDetailPop('+matnr+', '+evtCd+' )"><a>' + sparePartsList[k].bom_matnr + '</a></td>';  // Order Number 
+							rowHtml += '<td class="left" onclick="showItemDetailPop('+matnr+', '+evtCd+' )"><a>' + sparePartsList[k].idnrk_hyung + '</a></td>';  // Designation
 						}else{
 							rowHtml += '<td>' + sparePartsList[k].bom_matnr + '</td>';  // Order Number 
-						}
-						if(devType =='P'){
-							rowHtml += '<td class="left" onclick="showItemDetailPop('+matnr+', '+evtCd+' )"><a>' + sparePartsList[k].idnrk_hyung + '</a></td>';  // Designation
-						}
-						else{
 							rowHtml += '<td class="left">' + sparePartsList[k].idnrk_hyung + '</td>';  // Designation
 						}
-						rowHtml += '<td class="left" onclick="showItemDetailPop('+matnr+', '+evtCd+' )"><a>' + sparePartsList[k].idnrk_hyung + '</a></td>';  // Designation
+				
+
 						rowHtml += '<td>' + sparePartsList[k].meins + '</td>';  // 단위
 						rowHtml += '<td class="right">' + sparePartsList[k].menge + '</td>';  // 수량
 						

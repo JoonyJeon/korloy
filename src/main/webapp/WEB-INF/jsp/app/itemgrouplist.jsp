@@ -1,4 +1,4 @@
-<%----------------------------------------------------------------------------------------
+ <%----------------------------------------------------------------------------------------
  - 파일이름	: inti/init.jsp
  - 설    명		: 첫화면
  - 추가내용   	:   
@@ -135,7 +135,7 @@ String devType = (String) request.getAttribute("deviceType");
 								<div class="swiper-slide" >
 									<a  id="sa_<%=subInfo.getSa_cd() %>" onclick="javascript:changeSubApp(this)" <%=classOn %> data-index="<%=nSub%>" data-lang="<%=subInfo.getSa_cd() %>" data-langtype="data-sanm" data-sacd = "<%=subInfo.getSa_cd() %>" data-sanm="<%=StringUtil.nvl(LangMng.LANG_D(subInfo.getSa_cd(), session_lang), subInfo.getSa_nm())%>" data-sacd="<%=subInfo.getSa_cd() %>" data-subcnt="<%=StringUtil.toComma(subInfo.getSub_cnt()) %>">
 										<div class="img" >
-											<img src="<%=UPLOAD_ROOT_PATH%><%=subInfo.getMain_img()%>"	alt="<%=subInfo.getSa_nm()%>"  onerror="onErrorImage(this)">
+											<img src="<%=UPLOAD_ROOT_PATH%><%=subInfo.getMain_img()%>"	alt="<%=subInfo.getSa_nm()%>"  onerror="onErrorImage(this)" title ="<%=subInfo.getSa_nm()%>">
 										</div>
 										<div class="txt" data-lang="<%=subInfo.getSa_cd()%>" ><%=StringUtil.nvl(LangMng.LANG_D(subInfo.getSa_cd(), session_lang), subInfo.getSa_nm())%></div>
 									</a>
