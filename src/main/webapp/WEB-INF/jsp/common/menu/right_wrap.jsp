@@ -1498,12 +1498,12 @@ $(document).ready(function() {
 			}
 		},
 		submitHandler: function() {
-			if(reCAPCHA_flag == false) {
-				console.log("verify reCAPCHA")
-				// reCAPCHA로 포커싱
-				$('.rc-anchor-checkbox-label').click()
-				return;
-			}
+			// if(reCAPCHA_flag == false) {
+			// 	console.log("verify reCAPCHA")
+			// 	// reCAPCHA로 포커싱
+			// 	$('.rc-anchor-checkbox-label').click()
+			// 	return;
+			// }
 		
 			var param = {
 					actionID	:"<%=UserConstKey.ACTION_USER_JOIN_OK%>",
