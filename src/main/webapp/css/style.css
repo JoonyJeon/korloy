@@ -901,6 +901,7 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#d6d7d8', end
 .search_wrap .btn_group{margin: 25px 0;}
 .btn_group a{width: auto;padding: 0 25px 0 50px;border-radius: 5px;}
 .btn_group a.reset{background: #fff url(../img/bg_reset.png) no-repeat left 25px center;}
+.btn_group a.cancel{background: #fff url(../img/bg_cancel.png) no-repeat left 25px center;}
 .btn_group a.search{background: #0094da url(../img/bg_search.png) no-repeat left 25px center;color: #fff;}
 .search_wrap .btn_close{max-width: 850px;margin: 0 auto;text-align: right;}
 .search_wrap .btn_close a{display: block;padding: 10px 25px;background: url(../img/bg_select03_2.png) no-repeat right center;}
