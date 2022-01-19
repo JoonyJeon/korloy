@@ -124,6 +124,8 @@ public class UserServiceImpl implements UserService {
 			convertMap.put("#MAIL_TXT_8#", LangMng.LANG_D("FR000008", session_lang));
 			// Verify my Email
 			convertMap.put("#MAIL_TXT_9#", LangMng.LANG_D("FR000303", session_lang));
+			// Message for explicit URL
+			convertMap.put("#MAIL_TXT_10#", LangMng.LANG_D("FR000267", session_lang));
 			String content = "";
 			try {
 				// readTmplConvertMail(메일템플릿파일경로, convertMap)
@@ -133,7 +135,7 @@ public class UserServiceImpl implements UserService {
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} 
+			}
 			
 			// request 객체에서 첨부파일 정보 사용하여 파일경로들의 ArrayList 
 //-----------------------------------------------------
@@ -231,6 +233,8 @@ public class UserServiceImpl implements UserService {
 				convertMap.put("#MAIL_TXT_8#", LangMng.LANG_D("FR000008", session_lang));
 				// Verify my Email
 				convertMap.put("#MAIL_TXT_9#", LangMng.LANG_D("FR000303", session_lang));
+				// Message for explicit URL
+				convertMap.put("#MAIL_TXT_10#", LangMng.LANG_D("FR000267", session_lang));
 				
 				content = "";
 				try {
