@@ -475,24 +475,30 @@ var igListShow = true;
 var devType='<%=devType%>'
 var jsonFilter = JSON.parse('<%=jsonFilter%>');
 var click_offset  = new Array();
-jQuery(document).ready(function(){
 
-mainSwiper.slideTo(<%=selMainIndex%>);
-appSwiper.slideTo(<%=selSubIndex%>);
+jQuery(document).ready(function() {
+	mainSwiper.slideTo(<%=selMainIndex%>);
+	appSwiper.slideTo(<%=selSubIndex%>);
+	
 	$("#area_itemList").hide();
     $("#area_item").hide();
-	setMoreCount("<%=item_grp_list_cnt %>");
-	init_Item();
-	//통화변경
+	
+    setMoreCount("<%=item_grp_list_cnt %>");
+	
+    init_Item();
+	
+    //통화변경
 	$("#btnCurr").change(function(){	        
 		cur_currency = this.value;
         doItemReload("CURRENCY");
 	});
 
-   $("#btnSizeUnit").change(function(){            
-	   cur_size_unit = this.value;
-        doItemReload("SIZE");
-    });
+	$("#btnSizeUnit").change(function() {
+		cur_size_unit = this.value;
+		$("#myForm #unit_cd").val(cur_size_unit);
+		doItemReload("SIZE");
+		doItemListReload("SIZE");
+	});
 
    // 검색에서 넘어온 경우 아이템 화면을 바로 표시한다.
    <%if("Y".equals(searchInfo.getItem_view_yn())){%>
@@ -506,6 +512,17 @@ appSwiper.slideTo(<%=selSubIndex%>);
 	$("#main_sub_wrap").addClass("disabledbutton");
 	<%}%>
 });
+
+function doItemListReload(mode) {
+    if("SIZE" == mode) {
+		if ($('#area_itemGroup').css('display') == 'block') {
+			console.log("Refreshing List...");
+			getItemGroupList(false);
+		} else {
+			console.log("There is no List section on this page...");
+		}
+    }
+}
 
 function doItemView(){
 	$("#area_itemList").show();
@@ -795,6 +812,7 @@ function getMoreAll(){
             actionID :"<%=AppConstKey.ACTION_ITEM_GROUP_LIST%>",
             ma_cd : $("#myForm #ma_cd").val(),
             sa_cd : $("#myForm #sa_cd").val(),
+			unit_cd : $("#btnSizeUnit").val(),
             startIndex : $("#myForm #startIndex").val(),
             orderSort : $("#myForm #orderSort").val(),
             pageCount : $("#myForm #pageCount").val(),
@@ -824,7 +842,7 @@ function getItemGroupList(is_more){
             actionID :"<%=AppConstKey.ACTION_ITEM_GROUP_LIST%>",
             ma_cd : $("#myForm #ma_cd").val(),
             sa_cd : $("#myForm #sa_cd").val(),
-            unit_cd : $("#myForm #unit_cd").val(),
+            unit_cd : $("#btnSizeUnit").val(),
             startIndex : startIndex,
             orderSort : $("#myForm #orderSort").val(),
             pageCount : $("#myForm #pageCount").val(),

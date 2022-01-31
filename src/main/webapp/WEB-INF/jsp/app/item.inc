@@ -730,12 +730,15 @@ function init_Item(){
 var cur_size_unit = "<%=ConfigMng.getSizeUnit(request)%>";
 var cur_currency = "<%=ConfigMng.getCurrency(request)%>";
 
-function doItemReload(mode){
+function doItemReload(mode) {
     // 아이템리스트는 길이단위변경할때만 다시불러옴
-    if("SIZE" == mode){
+    if("SIZE" == mode) {
 	    // 아이템 리스트 영역이 열려있으면 다시 불러옴
-		if($('#area_itemList').css('display') == 'block'){
+		if ($('#area_itemList').css('display') == 'block') {
+			console.log("Refreshing Item Info...");
 			getItemGroupInfo();
+		} else {
+			console.log("There is no Item Info section on this page...");
 		}
     }
 	
