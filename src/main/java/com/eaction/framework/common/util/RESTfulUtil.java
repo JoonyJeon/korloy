@@ -67,7 +67,7 @@ public class RESTfulUtil {
 	        	logger.debug( url.getHost() + "500 Error");
 	        	logger.debug( responseMsg);
 	        } else { // 성공 후 응답 JSON 데이터받기
-	            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+	            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(),"UTF-8"));
 	            StringBuilder sb = new StringBuilder();
 	            String line = "";
 	            while ((line = br.readLine()) != null) {
