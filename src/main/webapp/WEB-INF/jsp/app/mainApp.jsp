@@ -9,8 +9,9 @@
  - 2019.05.10    1.0       HSI      신규작성
  -							KSH
 ------------------------------------------------------------------------------------------%>
-<%@page contentType="text/html;charset=utf-8" errorPage="/WEB-INF/jsp/common/error/catchException.jsp"%>
+<%@page contentType="text/html;charset=utf-8;" errorPage="/WEB-INF/jsp/common/error/catchException.jsp"%>
 <%@taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@page pageEncoding="UTF-8" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@page import = "java.util.List"%>
 <%@page import = "java.util.Date"%>
@@ -26,7 +27,11 @@
 <%@include file="/WEB-INF/jsp/common/include.inc" %>
 <%
 List<AppInfo> main_app_list = (List<AppInfo>)request.getAttribute("main_app_list");
+String deviceType = (String)request.getAttribute("deviceType");
 %>
+<head>
+	<meta  http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
 <style>
 /*.automatic > ul > li a {
     padding: 5px 30px;
@@ -70,7 +75,7 @@ List<AppInfo> main_app_list = (List<AppInfo>)request.getAttribute("main_app_list
                         <div class="swiper-wrapper" id="main_app_list">
                         	<% if (main_app_list != null && main_app_list.size() > 0) { %>
 								<% for (AppInfo result : main_app_list) { %>
-									<div class="swiper-slide">
+									<div class="swiper-slide" >
 										<a href="#" onclick="javascript:goSubApplication('<%=result.getMa_cd() %>', '<%=result.getMa_nm() %>');">
 		                                    <div class="img">
 		                                        <img src="<%=UPLOAD_ROOT_PATH %><%=result.getMain_img() %>" alt="<%=result.getMa_nm() %>"  onerror="onErrorImage(this)" />
@@ -81,8 +86,11 @@ List<AppInfo> main_app_list = (List<AppInfo>)request.getAttribute("main_app_list
 							<% } %>
                         </div>
                     </div>
-                    <div class="btn_prev">prev</div>
-                   	<div class="btn_next">next</div>
+         			<% if (deviceType != "P") { %>
+							 <div class="btn_prev">prev</div>
+                   			<div class="btn_next">next</div>
+					<% } %>
+               
                 </div>
 			</div>
 		</div>

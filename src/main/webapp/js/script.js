@@ -143,7 +143,7 @@ $(document).ready(function() {
     mainSwiper = new Swiper('.mainapp_list .swiper-container', {
         direction: 'horizontal',
         spaceBetween : 0,
-        slidesPerView: 6,
+        slidesPerView: 7,
         slidesPerGroup: 1,
         navigation: {
             prevEl: '.mainapp_list .btn_prev',
@@ -162,12 +162,12 @@ $(document).ready(function() {
             },
             // 화면의 넓이가 741px 이상일 때
             762: { 
-                slidesPerView: 6,
+                slidesPerView: 7,
                 spaceBetween: 0 
             },
             // 화면의 넓이가 962px 이상일 때
             962: { 
-                slidesPerView: 6,
+                slidesPerView: 7,
                 spaceBetween: 0 
             } 
         }

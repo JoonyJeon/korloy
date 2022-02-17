@@ -4669,6 +4669,7 @@
         swiper.$wrapperEl.prepend(renderSlide(slides[index], index));
       });
       swiper.$wrapperEl.children('.swiper-slide').css(offsetProp, (offset + "px"));
+      console.log(offset);
       onRendered();
     },
     renderSlide: function renderSlide(slide, index) {
@@ -7987,6 +7988,7 @@
       var isHorizontal = swiper.isHorizontal();
       var isVirtual = swiper.virtual && swiper.params.virtual.enabled;
       var wrapperRotate = 0;
+      console.log("width" + swiper.width);
       var $cubeShadowEl;
       if (params.shadow) {
         if (isHorizontal) {
