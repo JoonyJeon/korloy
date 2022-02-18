@@ -663,6 +663,7 @@ var file_name = "";
 //  엑셀다운 -------------------------
 jQuery(document).ready(function(){
 	<%-- console.log("선택한 assembly no ==> " + '<%=item_assem_no%>'); --%>
+	$('.loading').delay('1000').fadeOut();
 	getAssemblyList('first');
 	
 });
