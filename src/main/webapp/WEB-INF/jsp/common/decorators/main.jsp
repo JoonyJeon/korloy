@@ -16,7 +16,7 @@
 <%@page import="org.apache.commons.lang3.StringEscapeUtils"%>
 <eaction:html>
 
-	<body >
+	<body onbeforeunload="HandleBackFunctionality()">
 <eaction:script  />
 <script >
 var LANG_SET =  JSON.parse(JSON.stringify(<%=lang_code%>));
@@ -26,6 +26,10 @@ var USERAUTH = JSON.parse(JSON.stringify(<%=json_auth%>));
 </script>
     <!-- 210928 cookie 추가 S //-->
     <script>
+    function HandleBackFunctionality()  
+    {  
+    	$('.loading').delay('1000').fadeOut();
+    } 
     $(document).ready(function () {
         //동의 이벤트
         $(".btnAgree").click(function(e) {
