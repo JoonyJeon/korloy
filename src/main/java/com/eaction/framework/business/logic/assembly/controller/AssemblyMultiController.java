@@ -130,8 +130,11 @@ public class AssemblyMultiController {
 	@RequestMapping(value=ConstUrl.ASSEMBLY_URL, params = ConstKey.ACTION_ID + "=" + AssemblyConstKey.ACTION_ASSEMBLY_DETAIL)
 	@ResponseBody
     public Map<String, Object> selectAssemblyDetail(HttpServletRequest request, HttpServletResponse response, AssemblyInfo info) throws UserSysException{
+
     	Map<String, Object> result = new HashMap<>();
-		
+    	HttpSession session = request.getSession(true);
+    
+    	info.setMatnr(session.getAttribute(ConstKey.SESSION_SIZE_UNIT).toString());
     	String exceptionMsg ="";
     	
 		try{

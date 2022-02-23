@@ -117,6 +117,7 @@
 			  						</if>
 			  	)
 			  AND	D.USE_YN = 'Y'
+			  AND D.MATNR IN (SELECT MATNR FROM TB_ECAT_CONT_IT WHERE UNIT_CD IN (#{matnr},'CC0003'))
 		ORDER BY D.LST_DT	  
 	</select>
 	
@@ -422,8 +423,10 @@
 					SELECT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) 
 					WHERE SYMBOL IN ('DCON-WS','DCONWS')
 				  	  AND (VAL IS NOT NULL AND VAL <![CDATA[<>]]> '')
-					  AND FORMAT(CONVERT(FLOAT, VAL), '###0.####') = FORMAT(CONVERT(FLOAT, #{DCON-MS}), '###0.####'))
-			  )
+				  	  <!-- There is an error in the existing query;the val column has nonnumeric character -->
+					  <!-- FORMAT(CONVERT(FLOAT, VAL), '###0.####') = FORMAT(CONVERT(FLOAT, #{DCON-MS}), '###0.####')) -->
+					  AND VAL = #{DCON-MS}
+			  ))
 			</if>
 			<if test='CTYP eq "WS".toString()'>
 			SELECT * FROM TB_ECAT_CONT_IT WITH(NOLOCK)
@@ -437,8 +440,10 @@
 				  	SELECT MATNR FROM TB_ECAT_CONT_IT_PROP WITH(NOLOCK) 
 				  	WHERE SYMBOL IN ('DCON-MS','DCONMS')
 				  	  AND (VAL IS NOT NULL AND VAL <![CDATA[<>]]> '')
-				  	  AND FORMAT(CONVERT(FLOAT, VAL), '###0.####') = FORMAT(CONVERT(FLOAT, #{DCON-WS}), '###0.####'))
-			  )				  	  
+				  	  <!-- There is an error in the existing query;the val column has nonnumeric character -->
+				  	  <!-- FORMAT(CONVERT(FLOAT, VAL), '###0.####') = FORMAT(CONVERT(FLOAT, #{DCON-WS}), '###0.####')) -->
+				  	   AND VAL = #{DCON-WS}
+			  ))				  	  
 			</if>
 		) MG 
 		LEFT OUTER JOIN TB_ECAT_CONT_F ECF WITH(NOLOCK)
