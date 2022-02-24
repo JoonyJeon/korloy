@@ -133,8 +133,12 @@ public class AssemblyMultiController {
 
     	Map<String, Object> result = new HashMap<>();
     	HttpSession session = request.getSession(true);
-    
-    	info.setSearch_Unit_Cd(session.getAttribute(ConstKey.SESSION_SIZE_UNIT).toString());
+    	if(session.getAttribute(ConstKey.SESSION_SIZE_UNIT).toString().equals("") || session.getAttribute(ConstKey.SESSION_SIZE_UNIT).toString() == null) {
+    		info.setSearch_Unit_Cd("CC0001");
+    	} else {
+    		info.setSearch_Unit_Cd(session.getAttribute(ConstKey.SESSION_SIZE_UNIT).toString());
+    	}
+    	
     	String exceptionMsg ="";
     	
 		try{
