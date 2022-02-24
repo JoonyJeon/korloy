@@ -108,6 +108,15 @@ public class AssemblyInfo extends EactReqInfo {
 	/** ctype */
 	private String ctype = "";
 	
+	private String search_unit_cd = "";
+
+	public void setSearch_Unit_Cd(String unit_cd) {
+			this.search_unit_cd = unit_cd;
+		}
+		
+		public String getSearch_Unit_Cd() {
+			return StringUtil.nvl(this.search_unit_cd);
+		}	
 	
 	/*****************************************************
 	 * GTC Hierarchy 구조

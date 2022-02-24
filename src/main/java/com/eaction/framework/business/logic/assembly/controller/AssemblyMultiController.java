@@ -134,7 +134,7 @@ public class AssemblyMultiController {
     	Map<String, Object> result = new HashMap<>();
     	HttpSession session = request.getSession(true);
     
-    	info.setMatnr(session.getAttribute(ConstKey.SESSION_SIZE_UNIT).toString());
+    	info.setSearch_Unit_Cd(session.getAttribute(ConstKey.SESSION_SIZE_UNIT).toString());
     	String exceptionMsg ="";
     	
 		try{

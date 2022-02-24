@@ -106,7 +106,8 @@
     							AND IMG.FILE_TYP = 'CC0017') AS IT_IMG    							
     			  ,(SELECT COUNT(1) FROM TB_ECAT_ASSEM_LOC LOC WHERE LOC.ASSEM_NO = #{assem_no} AND LOC.MATNR = D.MATNR ) AS QUANTITY
     			  ,(SELECT M.BULD_STA FROM TB_ECAT_ASSEM_M M WHERE M.ASSEM_NO = #{assem_no}) AS BULD_STA <!-- Build Status -->
-		FROM   TB_ECAT_ASSEM_D D
+		FROM   TB_ECAT_ASSEM_D D JOIN TB_ECAT_CONT_IT U 
+		ON U.MATNR = D.MATNR
 		WHERE  1=1
 				AND D.ASSEM_NO = #{assem_no}
 				AND  EXISTS( SELECT 	ASSEM_NO
@@ -117,7 +118,7 @@
 			  						</if>
 			  	)
 			  AND	D.USE_YN = 'Y'
-			  AND D.MATNR IN (SELECT MATNR FROM TB_ECAT_CONT_IT WHERE UNIT_CD IN (#{matnr},'CC0003'))
+			  AND U.UNIT_CD IN (#{search_unit_cd},'CC0003')
 		ORDER BY D.LST_DT	  
 	</select>
 	
