@@ -70,28 +70,42 @@ String deviceType = (String)request.getAttribute("deviceType");
 	<div id="contents">
 		<div class="main_cont">
 			<div class="inner">
-				<div class="mainapp_list">
-                    <div class="swiper-container">
-                        <div class="swiper-wrapper" id="main_app_list">
-                        	<% if (main_app_list != null && main_app_list.size() > 0) { %>
-								<% for (AppInfo result : main_app_list) { %>
-									<div class="swiper-slide" >
-										<a href="#" onclick="javascript:goSubApplication('<%=result.getMa_cd() %>', '<%=result.getMa_nm() %>');">
-		                                    <div class="img">
-		                                        <img src="<%=UPLOAD_ROOT_PATH %><%=result.getMain_img() %>" alt="<%=result.getMa_nm() %>"  onerror="onErrorImage(this)" />
-		                                    </div> <span data-lang="<%=result.getMa_cd() %>"><%=result.getMa_nm() %></span>
-		                                </a>
-		                            </div>
+				<% if (deviceType != "P") { %>
+					<ul>
+						<%if(main_app_list != null && main_app_list.size() > 0){ %>
+						<% for(AppInfo result : main_app_list){ %>
+						<li >
+							<a href="#" onclick="javascript:goSubApplication('<%=result.getMa_cd() %>', '<%=result.getMa_nm() %>');">
+								<div class="img"><img src="<%=UPLOAD_ROOT_PATH %><%=result.getMain_img() %>" alt="<%=result.getMa_nm() %>"  onerror="onErrorImage(this)"></div>
+								<span data-lang="<%=result.getMa_cd() %>"><%=result.getMa_nm() %></span>
+							</a>
+						</li>
+						<% } %>
+						<%} %>
+					</ul>
+				<% } %>
+				<% if (deviceType == "P") { %>
+					<div class="mainapp_list">
+	                    <div class="swiper-container">
+	                        <div class="swiper-wrapper" id="main_app_list">
+	                        	<% if (main_app_list != null && main_app_list.size() > 0) { %>
+									<% for (AppInfo result : main_app_list) { %>
+										<div class="swiper-slide" >
+											<a href="#" onclick="javascript:goSubApplication('<%=result.getMa_cd() %>', '<%=result.getMa_nm() %>');">
+			                                    <div class="img">
+			                                        <img src="<%=UPLOAD_ROOT_PATH %><%=result.getMain_img() %>" alt="<%=result.getMa_nm() %>"  onerror="onErrorImage(this)" />
+			                                    </div> <span data-lang="<%=result.getMa_cd() %>"><%=result.getMa_nm() %></span>
+			                                </a>
+			                            </div>
+									<% } %>
 								<% } %>
-							<% } %>
-                        </div>
-                    </div>
-         			<% if (deviceType != "P") { %>
-							 <div class="btn_prev">prev</div>
-                   			<div class="btn_next">next</div>
-					<% } %>
-               
-                </div>
+	                        </div>
+	                    </div>
+	                    <div class="btn_prev">prev</div>
+	                	<div class="btn_next">next</div>
+	                </div>
+				<% } %>
+				
 			</div>
 		</div>
 	</div>
