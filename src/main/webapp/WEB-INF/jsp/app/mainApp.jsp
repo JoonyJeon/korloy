@@ -101,8 +101,9 @@ String deviceType = (String)request.getAttribute("deviceType");
 								<% } %>
 	                        </div>
 	                    </div>
-	                    <div class="btn_prev">prev</div>
+	                    <!-- <div class="btn_prev">prev</div>
 	                	<div class="btn_next">next</div>
+	                	 -->
 	                </div>
 				<% } %>
 				
