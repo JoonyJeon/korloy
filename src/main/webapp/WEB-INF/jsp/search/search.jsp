@@ -429,13 +429,12 @@ JSONObject json_gtc_item_cnt =  JSONObject.fromObject(gtc_item_cnt);
                                 <thead>
 									<colgroup>
 										<col width="12%">
-										<col width="10%">
-										<col width="10%">
-										<col width="*">
+										<col width="5%">
+										<col width="5%">
+										<col width="5%">
 										<col width="20%">
 										<col width="10%">
 										<col width="10%">
-										<col width="20%">
 									</colgroup>
                                     <tr>
                                         <%-- Order No --%>
@@ -449,7 +448,7 @@ JSONObject json_gtc_item_cnt =  JSONObject.fromObject(gtc_item_cnt);
                                         <%-- Designation --%>
                                         <th><%= LangMng.LANG_D("FR000039", session_lang)%></th>
 <!--                                        <%-- Grade --%> 	-->
-<!--                                        <th><%= LangMng.LANG_D("FR000041", session_lang)%></th>  -->
+
                                         <%-- Item Group --%>
                                         <th><%= LangMng.LANG_D("FR000031", session_lang)%></th>
                                         <%-- Download --%>
@@ -1312,8 +1311,8 @@ function doMakeList(dataRow){
             view_02_grade = '<li><em>Grade</em>No Grade</li>';
         }
         if(pc_yn == "Y"){
-            view_01_list = view_01_list + '<tr><td style="cursor:pointer" onclick="showItemDetail(this)" data-matnr="'+matnr+'" data-igcd="'+ig_cd+'" data-ignm="'+ig_nm+'" data-designation="'+designation+'">'+matnr+'<td>'+view_01_cart+'</td><td>'+view_01_new+ '</td>' +
-            '<td style="text-align:left;cursor:pointer" onclick="showItemDetail(this)" data-matnr="'+matnr+'" data-igcd="'+ig_cd+'" data-ignm="'+ig_nm+'" data-designation="'+designation+'">'+designation+'</td><td style="text-align:left">'+ig_nm+'</td><td><div class="download">'+stp_div_01 + dxf_div_01+
+            view_01_list = view_01_list + '<tr><td style="cursor:pointer; text-decoration:underline;color: #0094da;" onclick="showItemDetail(this)" data-matnr="'+matnr+'" data-igcd="'+ig_cd+'" data-ignm="'+ig_nm+'" data-designation="'+designation+'">'+matnr+'<td>'+view_01_cart+'</td><td>'+view_01_new+ '</td>' +
+            '<td style="cursor:pointer; text-decoration:underline;color: #0094da;" onclick="showItemDetail(this)" data-matnr="'+matnr+'" data-igcd="'+ig_cd+'" data-ignm="'+ig_nm+'" data-designation="'+designation+'">'+designation+'</td><td style="text-align:left">'+ig_nm+'</td><td><div class="download">'+stp_div_01 + dxf_div_01+
             '</div></td></tr>';
             var item_group_name = toTruncate(ig_nm, 10, '...');
             view_02_list = view_02_list + '<li>'+view_02_new + '<div class="img" style="height:120px"><img src="'+img_url+'" alert="'+designation+'" onerror="onErrorImage(this);"></div>'+
@@ -1321,8 +1320,8 @@ function doMakeList(dataRow){
             '<div class="name" style="cursor:pointer" onclick="showItemDetail(this)" data-matnr="'+matnr+'" data-igcd="'+ig_cd+'" data-ignm="'+ig_nm+'" data-designation="'+designation+'">' +designation +'</div><div class="down">'+stp_div_02 + dxf_div_02+
             view_02_cart +'</div></li>';                
 
-            view_03_list = view_03_list + '<tr><td style="cursor:pointer" onclick="showItemDetail(this)" data-matnr="'+matnr+'" data-igcd="'+ig_cd+'" data-ignm="'+ig_nm+'" data-designation="'+designation+'">'+matnr+'</td><td><a href="#" class="open_view"><div class="img_view"><img src="'+img_url+'" alt="" onerror="onErrorImage(this)"></div><div class="view_pop"><img src="'+img_url+'" alt="" onerror="onErrorImage(this)"></div>'+
-            '</a></td><td>'+view_03_cart+'</td><td>' + view_03_new + '</td><td style="text-align:left;cursor:pointer" onclick="showItemDetail(this)" data-matnr="'+matnr+'" data-igcd="'+ig_cd+'" data-ignm="'+ig_nm+'" data-designation="'+designation+'">' + designation +' </td><td style="text-align:left">' + grade +' </td><td style="text-align:left">' + ig_nm +' </td><td>' +
+            view_03_list = view_03_list + '<tr><td style="cursor:pointer; text-decoration:underline;color: #0094da;" onclick="showItemDetail(this)" data-matnr="'+matnr+'" data-igcd="'+ig_cd+'" data-ignm="'+ig_nm+'" data-designation="'+designation+'">'+matnr+'</td><td><a href="#" class="open_view"><div class="img_view"><img src="'+img_url+'" alt="" onerror="onErrorImage(this)"></div><div class="view_pop"><img src="'+img_url+'" alt="" onerror="onErrorImage(this)"></div>'+
+            '</a></td><td>'+view_03_cart+'</td><td>' + view_03_new + '</td><td style= "cursor:pointer; text-decoration:underline;color: #0094da;" onclick="showItemDetail(this)" data-matnr="'+matnr+'" data-igcd="'+ig_cd+'" data-ignm="'+ig_nm+'" data-designation="'+designation+'">' + designation +' </td><td style="">' + ig_nm +' </td><td>' +
             '<div class="download">'+stp_div_03 + dxf_div_03+'</div></td></tr>';
         }else{
             view_04_list = view_04_list + '<div class="listTable blueLine noMargin noScroll" ><p class="currentItem" onclick="doItemShow(this);">' + view_04_cart + view_04_new + designation + '</p>' +
