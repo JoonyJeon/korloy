@@ -1676,6 +1676,13 @@ a.dxf{color: #8597a0;border-color: #8597a0;background-image: url(../img/bg_dxf.p
     .btn_assembly ul li{margin-left: 5px;}
     
 }
+.main-swiper {width: 100%}
+.main-swiper ul li {float: left;margin-left: -1px; width:14.3% !important;}
+.main-swiper ul{display: inline-block; width:100%;}
+@media only screen and (max-width: 763px) {
+	.main-swiper ul li {float: left;margin-left: -1px; width:33.2% !important;}
+	.main-swiper ul li:nth-child(3n+4) {clear:left;float:left;}
+}
 
 
 

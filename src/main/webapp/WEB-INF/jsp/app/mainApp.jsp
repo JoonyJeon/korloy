@@ -85,22 +85,26 @@ String deviceType = (String)request.getAttribute("deviceType");
 					</ul>
 				<% } %>
 				<% if (deviceType == "P") { %>
-					<div class="mainapp_list">
+				<div class="mainapp_list">
 	                    <div class="swiper-container">
 	                        <div class="swiper-wrapper" id="main_app_list">
+	                        <div class="main-swiper">
+				<ul>
 	                        	<% if (main_app_list != null && main_app_list.size() > 0) { %>
 									<% for (AppInfo result : main_app_list) { %>
-										<div class="swiper-slide" >
-											<a href="#" onclick="javascript:goSubApplication('<%=result.getMa_cd() %>', '<%=result.getMa_nm() %>');">
-			                                    <div class="img">
-			                                        <img src="<%=UPLOAD_ROOT_PATH %><%=result.getMain_img() %>" alt="<%=result.getMa_nm() %>"  onerror="onErrorImage(this)" />
-			                                    </div> <span data-lang="<%=result.getMa_cd() %>"><%=result.getMa_nm() %></span>
-			                                </a>
-			                            </div>
+										<li >
+							<a href="#" onclick="javascript:goSubApplication('<%=result.getMa_cd() %>', '<%=result.getMa_nm() %>');">
+								<div class="img"><img src="<%=UPLOAD_ROOT_PATH %><%=result.getMain_img() %>" alt="<%=result.getMa_nm() %>"  onerror="onErrorImage(this)"></div>
+								<span data-lang="<%=result.getMa_cd() %>"><%=result.getMa_nm() %></span>
+							</a>
+						</li>
 									<% } %>
 								<% } %>
+								</ul>
+				</div>
 	                        </div>
 	                    </div>
+
 	                    <!-- <div class="btn_prev">prev</div>
 	                	<div class="btn_next">next</div>
 	                	 -->
