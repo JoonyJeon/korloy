@@ -682,7 +682,11 @@ function doChangeLang(){
 
 //언어변경
 function LangChange(changeLang) {
-
+	  if(changeLang == 'ZHO'){
+      	$("body,h1,h2,h3,h4,input,button,input,select,button,textarea").css("font-family","'Tahoma', 'sans-serif','Noto Sans SC', serif ");
+      } else {
+    	$("body,h1,h2,h3,h4,input,button,input,select,button,textarea").css("font-family","'Tahoma', 'sans-serif','Noto Sans KR', serif ");  
+      }
 	var obj = document.querySelectorAll('[data-lang]');
 	LANG_OBJ = new Array();
     for( var i = 0; i < obj.length; i++ ){

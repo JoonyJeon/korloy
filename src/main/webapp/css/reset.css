@@ -1,6 +1,6 @@
 @charset "utf-8";
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans&family=Noto+Serif+SC:wght@200;300;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans&family=Noto+Sans+SC:wght@200;300;400;500;700;900&display=swap');
 
 /* Reset */
 *{margin:0;padding:0;}
@@ -8,13 +8,13 @@ html,body{}
 html{}
 body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,form,fieldset,p,button{margin:0;padding:0}
 
-body,h1,h2,h3,h4,input,button{font-family:'Tahoma', 'sans-serif','Noto Sans SC', serif ; font-size:14px; font-weight:400; letter-spacing:0px; color:#101010;}
+body,h1,h2,h3,h4,input,button{font-family:'Tahoma', 'sans-serif','Noto Sans KR', serif ; font-size:14px; font-weight:400; letter-spacing:0px; color:#101010;}
 body{height:100%; background:#FFF; word-break:keep-all; padding:0; margin:0; position:relative;}
 body.noScroll {position:fixed; width:100%; height:100%; left:0; top:0; overflow:hidden;}
 img,fieldset,iframe{border:0 none}
 div {box-sizing:border-box;}
 li{list-style:none; box-sizing:border-box;	}
-input,select,button,textarea{vertical-align:middle; font-family:'Noto Sans SC', 'Tahoma', 'sans-serif', serif; font-size:14px; font-weight:400; letter-spacing:0px; outline:none;}
+input,select,button,textarea{vertical-align:middle; font-family:'Noto Sans KR', 'Tahoma', 'sans-serif', serif; font-size:14px; font-weight:400; letter-spacing:0px; outline:none;}
 input {letter-spacing:0;}
 input, select:focus {outline: none;}
 *:focus {outline:none; box-shadow: none;}
