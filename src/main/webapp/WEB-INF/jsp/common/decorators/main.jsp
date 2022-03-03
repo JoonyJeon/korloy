@@ -23,6 +23,7 @@ var LANG_SET =  JSON.parse(JSON.stringify(<%=lang_code%>));
 var USERINFO= JSON.parse(JSON.stringify(<%=json_user%>));
 var main_combo = JSON.parse(JSON.stringify(<%=main_combo%>));
 var USERAUTH = JSON.parse(JSON.stringify(<%=json_auth%>));
+var curr_lang = "<%= session_lang %>";
 </script>
     <!-- 210928 cookie 추가 S //-->
     <script>
@@ -324,6 +325,9 @@ jQuery(document).ready(function(){
     }
     doAfterLogin(main_combo, true);
     $("#privacy_area").html();
+    if(curr_lang == 'ZHO'){
+      	$("body,h1,h2,h3,h4,input,button,input,select,button,textarea").css("font-family","'Tahoma', 'sans-serif','Noto Sans SC', serif ");
+      }
 });
 
 function doAfterLogin(data, isInit){
@@ -655,6 +659,7 @@ function doChangeLang(){
 		var langSize = $(LANG_OBJ[i]).data('langsize');
 		var langType = $(LANG_OBJ[i]).data('langtype');
 		var langDefault = $(LANG_OBJ[i]).data('langdef');
+
 		var text = LANG_SET[lang_cd];
 		
 		if(typeof langSize !="undefined"){
