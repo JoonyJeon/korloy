@@ -532,6 +532,7 @@ select option{color: #000;}
 .mdTable a.dxf{float:left; font-size: 12px; border: 1px solid #8597a0;color: #8597a0;background: url(../img/bg_dxf.png) no-repeat 15px center;padding: 5px 15px 5px 30px;border-radius: 5px;margin-left: 10px; text-decoration:none;}
 .listTable.blueLine .currentItem .new {display:inline-block; width: 50px;font-size: 11px;color: #fff;text-align: center;border-radius: 5px;margin-right: 5px;font-weight: 600; background: #ee372e; margin:0 5px;}
 .item_wrap .listTable .new {display:inline-block; width: 50px;font-size: 11px;color: #fff;text-align: center;border-radius: 5px;margin-right: 5px;font-weight: 600; background: #ee372e; margin:0 5px;}
+.item_wrap .listTable .new_tag {display:inline-block; width: 25px;font-size: 11px;color: #fff;text-align: center;border-radius: 0px;background: #eebd2e; margin:0 0px;margin-right: 2px;margin-left: -19px;}
 .item_wrap .listTable .renew {display:inline-block; width: 50px;font-size: 11px;color: #fff;text-align: center;border-radius: 5px;margin-right: 5px;font-weight: 600; background: #0093b3; margin:0 5px;}
 .item_wrap .listTable a.step {display:inline-block; font-size: 12px; border: 1px solid #0094da;color: #0094da;background: url(../img/bg_step.png) no-repeat 15px center;padding: 5px 15px 5px 30px;border-radius: 5px; text-decoration:none;}
 .item_wrap .listTable a.dxf{display:inline-block; font-size: 12px; border: 1px solid #8597a0;color: #8597a0;background: url(../img/bg_dxf.png) no-repeat 15px center;padding: 5px 15px 5px 30px;border-radius: 5px;margin-left: 10px; text-decoration:none;}

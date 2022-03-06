@@ -1265,7 +1265,7 @@ function createItemListTable(){
 			//cart
 			rowHtml += '<td style="cursor:pointer;"><a onclick="javascript:goItemCart(this);" data-matnr="' + itemList[k].MATNR + '" class="bnt_cart" data-evtcd="EC0017"><img src="' +  cartImgUrl + '" alt=""></a></td>'
 			//order number
-			rowHtml += '<td onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;">' + itemList[k].MATNR + '</td>';  // Default :  Order Number 
+			rowHtml += '<td onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;">' + (itemList[k].NEW_YN === 'Y' ? '<div class="new_tag" data-lang="FR000030">' + LANG_SET["FR000030"] + '</div>' : '') + itemList[k].MATNR + '</td>';  // Default :  Order Number 
 			// 자재내역 
 			rowHtml += '<td class="ellipsis"onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;" title ="' + itemList[k].DESIGNATION + '">'  + itemList[k].DESIGNATION; +'</td></tr>'
 			colGroupHtml += rowHtml; 
@@ -1278,7 +1278,7 @@ function createItemListTable(){
 			if(itemList[k].UNIT_CD !='CC0002'){
 				var rowHtml = '<tr>';
 				rowHtml += '<td style="cursor:pointer;"><a onclick="javascript:goItemCart(this);" data-matnr="' + itemList[k].MATNR + '" class="bnt_cart" data-evtcd="EC0017"><img src="' +  cartImgUrl + '" alt=""></a></td>'
-				rowHtml += '<td onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;">' + itemList[k].MATNR + '</td>';  // Default :  Order Number 
+				rowHtml += '<td onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;">' + (itemList[k].NEW_YN === 'Y' ? '<div class="new_tag" data-lang="FR000030">' + LANG_SET["FR000030"] + '</div>' : '') + itemList[k].MATNR + '</td>';  // Default :  Order Number 
 				rowHtml += '<td class="ellipsis"onClick="goItem(' + "'" +itemList[k].MATNR + "','" + itemList[k].DESIGNATION + "'" + ' )"  style="cursor:pointer; text-decoration:underline;color: #0094da;" title ="' + itemList[k].DESIGNATION + '">'  + itemList[k].DESIGNATION; +'</td></tr>'
 				colGroupHtml += rowHtml; 
 			}
