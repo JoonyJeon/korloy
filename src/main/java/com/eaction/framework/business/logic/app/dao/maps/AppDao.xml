@@ -831,7 +831,7 @@
     
 	<!-- Item 정보 취득 -->
     <select id="selectSPItemInfo" resultType="map" parameterType="AppSearchInfo">
-        {CALL  SP_ITEM_LIST(#{search_prop_grp_cd}, #{search_matnr})}
+        {CALL  SP_ITEM_LIST(#{search_prop_grp_cd}, #{search_matnr}, #{search_unit_cd})}
     </select>
 	
 	<!-- Item 정보 취득 -->
@@ -937,7 +937,7 @@
 		
 	<!-- Related Inserts 목록 조회 -->
 	<select id="selectRelatedInsertsList" resultType="map" parameterType="AppSearchInfo">
-		{CALL SP_RELATED_LIST('INS', #{search_matnr}, 6)}
+		{CALL SP_RELATED_LIST('INS', #{search_matnr}, 6, #{search_unit_cd})}
 		<!-- 
 		SELECT * 
     	FROM V_ECAT_CONT_LIST V
@@ -967,7 +967,7 @@
 	
 	<!-- Related Holders 목록 조회 -->
 	<select id="selectRelatedHoldersList" resultType="map" parameterType="AppSearchInfo">
-		{CALL SP_RELATED_LIST('ADP', #{search_matnr}, 10)}
+		{CALL SP_RELATED_LIST('ADP', #{search_matnr}, 10, #{search_unit_cd})}
 		<!--  
 		SELECT * 
     	FROM V_ECAT_CONT_LIST V
