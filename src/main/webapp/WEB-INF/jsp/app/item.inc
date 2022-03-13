@@ -2062,6 +2062,7 @@ function getItemIfno(){
 	var param = {
 			actionID:"<%=AppConstKey.ACTION_ITEM_INFO%>"
 			,search_matnr: $('#it_matnr').val()
+			,search_unit_cd: $("#btnSizeUnit").val()
 	};
    $.ajax({
 		type:"POST",
@@ -3152,6 +3153,7 @@ function getRelatedInsertsList(){
 	var param = {
 			actionID:"<%=AppConstKey.ACTION_RELATED_INSERTS_LIST%>"
 			,search_matnr: $('#it_matnr').val()
+			,search_unit_cd: $("#btnSizeUnit").val()
 	};
    $.ajax({
 		type:"POST",
@@ -3660,6 +3662,7 @@ for(var k=0; k<insertsList.length; k++){
  	var param = {
  			actionID:"<%=AppConstKey.ACTION_RELATED_HOLDERS_LIST%>"
 			,search_matnr: $('#it_matnr').val()
+			,search_unit_cd: $("#btnSizeUnit").val()
 	};
    $.ajax({
 		type:"POST",
