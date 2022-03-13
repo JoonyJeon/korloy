@@ -2139,7 +2139,7 @@ function getItemIfno(){
 			}else{
 				itP21FileUrl = "";
 			}			
-			
+			console.log("itemInfo:", itemInfo);
 			// 2D Representation Image
 			var itDxfImgUrl;		
 			if(itemInfo.DXF_IMG_THUMB !== undefined){
@@ -2154,7 +2154,7 @@ function getItemIfno(){
 			}else{
 				// 원본이미지가 없으면 썸네일 이미지로 대체
 				if(itemInfo.ITEM_IMAGE_THUMB !== undefined){
-					popItDxfImgUrl = "<%=UPLOAD_ROOT_PATH %>"  + itemInfo.DXF_IMG_THUMB;
+					popItDxfImgUrl = "<%=UPLOAD_ROOT_PATH %>"  + itemInfo.ITEM_IMAGE_THUMB;
 				}
 			}			
 			
