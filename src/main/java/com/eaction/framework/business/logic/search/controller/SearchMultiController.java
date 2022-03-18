@@ -1058,8 +1058,11 @@ public class SearchMultiController {
 				if(!"".equals(value)) {
 					if("IN".equals(sch_type) || "SB".equals(sch_type)) {  
 						sql = sql + String.format(" AND(SYMBOL='%s'", prop);
-							sql = sql + String.format("AND (SELECT CASE WHEN ISNUMERIC(REPLACE(REPLACE(VALUE,'{',''),'}','')) = 1 THEN CONVERT(FLOAT,REPLACE(REPLACE(VALUE,'{',''),'}','')) ELSE NULL END FROM dbo.fn_split_string(VAL,'/')) = '%s')", value);
-							//sql = sql + String.format(" AND VAL='%s')", value);
+						if(prop.equals("FHA")) {
+							sql = sql + String.format("AND (SELECT CASE WHEN ISNUMERIC(REPLACE(REPLACE(VALUE,'{',''),'}','')) = 1 THEN CONVERT(FLOAT,REPLACE(REPLACE(VALUE,'{',''),'}','')) ELSE NULL END FROM dbo.fn_split_string(VAL,'/')) = '%s')", value);	
+						} else {
+							sql = sql + String.format(" AND VAL='%s')", value);	
+						}
 					}else if(sch_type.contains("CE")) {
 						if("CE1".equals(sch_type)) {
 							sql = sql + String.format(" AND(SYMBOL='%s'", prop);
