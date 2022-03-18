@@ -1059,7 +1059,29 @@ public class SearchMultiController {
 					if("IN".equals(sch_type) || "SB".equals(sch_type)) {  
 						sql = sql + String.format(" AND(SYMBOL='%s'", prop);
 						if(prop.equals("FHA")) {
-							sql = sql + String.format("AND (SELECT CASE WHEN ISNUMERIC(REPLACE(REPLACE(VALUE,'{',''),'}','')) = 1 THEN CONVERT(FLOAT,REPLACE(REPLACE(VALUE,'{',''),'}','')) ELSE NULL END FROM dbo.fn_split_string(VAL,'/')) = '%s')", value);	
+							sql = sql + String.format("AND (\r\n" + 
+									"      convert(\r\n" + 
+									"        float, \r\n" + 
+									"        case when charindex('}{', val) > 0 then substring(\r\n" + 
+									"          val, \r\n" + 
+									"          2, \r\n" + 
+									"          charindex('}{', val)-2\r\n" + 
+									"        ) else case when left(val, 1) = '{' then substring(\r\n" + 
+									"          val, \r\n" + 
+									"          2, \r\n" + 
+									"          len(val)-2\r\n" + 
+									"        ) else '' end end\r\n" + 
+									"      ) = '%s' \r\n" + 
+									"      or convert(\r\n" + 
+									"        float, \r\n" + 
+									"        case when charindex('}{', val) > 0 then substring(\r\n" + 
+									"          val, \r\n" + 
+									"          2, \r\n" + 
+									"          charindex('}{', val)-2\r\n" + 
+									"        ) else '' end\r\n" + 
+									"      ) = '%s'\r\n" + 
+									"    )\r\n" + 
+									"  )", value , "-"+value);	
 						} else {
 							sql = sql + String.format(" AND VAL='%s')", value);	
 						}
