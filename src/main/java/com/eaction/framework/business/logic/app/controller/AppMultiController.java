@@ -374,7 +374,33 @@ public class AppMultiController {
 				if(!"".equals(value)) {
 					if("IN".equals(sch_type) || "SB".equals(sch_type)) {  
 						sql = sql + String.format(" AND(SYMBOL='%s'", prop);
-						sql = sql + String.format(" AND VAL='%s')", value);
+						if(prop.equals("FHA")) {
+							sql = sql + String.format("AND (\r\n" + 
+									"      convert(\r\n" + 
+									"        float, \r\n" + 
+									"        case when charindex('}{', val) > 0 then substring(\r\n" + 
+									"          val, \r\n" + 
+									"          2, \r\n" + 
+									"          charindex('}{', val)-2\r\n" + 
+									"        ) else case when left(val, 1) = '{' then substring(\r\n" + 
+									"          val, \r\n" + 
+									"          2, \r\n" + 
+									"          len(val)-2\r\n" + 
+									"        ) else '' end end\r\n" + 
+									"      ) = '%s' \r\n" + 
+									"      or convert(\r\n" + 
+									"        float, \r\n" + 
+									"        case when charindex('}{', val) > 0 then substring(\r\n" + 
+									"          val, \r\n" + 
+									"          2, \r\n" + 
+									"          charindex('}{', val)-2\r\n" + 
+									"        ) else '' end\r\n" + 
+									"      ) = '%s'\r\n" + 
+									"    )\r\n" + 
+									"  )", value , "-"+value);	
+						} else {
+							sql = sql + String.format(" AND VAL='%s')", value);	
+						}
 					}else if(sch_type.contains("CE")) {
 						if("CE1".equals(sch_type)) {
 							sql = sql + String.format(" AND(SYMBOL='%s'", prop);
